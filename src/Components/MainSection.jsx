@@ -186,13 +186,21 @@ const MainSection = () => {
             ? "All Events"
             : `${selectedSociety} Events`}
         </p>
+        <div>
+          <button
+            onClick={() => navigate("/Upcoming")}
+            className="w-full sm:w-auto mr-2 text-white px-6 py-2 cursor-pointer font-bold shadow-[0_5px_15px_rgb(238,238,238,0.4)] bg-transparent rounded-lg border border-1 border-white hover:bg-white/10 transition-colors text-sm whitespace-nowrap"
+          >
+            View Upcoming Events
+          </button>
 
-        <button
-          onClick={() => navigate("/Upcoming")}
-          className="w-full sm:w-auto text-white px-6 py-2 cursor-pointer font-bold shadow-[0_5px_15px_rgb(238,238,238,0.4)] bg-transparent rounded-lg border border-1 border-white hover:bg-white/10 transition-colors text-sm whitespace-nowrap"
-        >
-          View Upcoming Events
-        </button>
+          <button
+            onClick={() => navigate("/PastEvents")}
+            className="w-full sm:w-auto text-white px-6 py-2 cursor-pointer font-bold shadow-[0_5px_15px_rgb(238,238,238,0.4)] bg-transparent rounded-lg border border-1 border-white hover:bg-white/10 transition-colors text-sm whitespace-nowrap"
+          >
+            View Past Events
+          </button>
+        </div>
       </div>
 
       {/* 📦 Event Cards */}

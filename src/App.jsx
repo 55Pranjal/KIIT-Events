@@ -31,6 +31,7 @@ import EditSociety from "./Components/EditSociety";
 import AnnouncementsList from "./Components/AnnouncementsList";
 import CreateAnnouncement from "./Components/CreateAnnouncement";
 import AdminQueries from "./Components/AdminQueryPage";
+import PastEvents from "./Components/PastEvents";
 
 function App() {
   const navigate = useNavigate();
@@ -93,6 +94,7 @@ function App() {
         <Route path="/AnnouncementsList" element={<AnnouncementsList />} />
         <Route path="/CreateAnnouncements" element={<CreateAnnouncement />} />
         <Route path="/AdminQueriesPage" element={<AdminQueries />} />
+        <Route path="/PastEvents" element={<PastEvents />} />
       </Routes>
     </>
   );

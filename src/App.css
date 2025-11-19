@@ -1,7 +1,7 @@
 html,
 body,
 #root {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
   padding: 0;
   background: linear-gradient(
@@ -15,6 +15,10 @@ body,
   background-size: cover;
   color: white;
   font-family: "Inter", sans-serif;
+}
+
+body {
+  @apply bg-gradient-to-r from-black/80 to-green-950/40 min-h-screen;
 }
 
 #root {
