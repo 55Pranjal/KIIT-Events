@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import { useNavigate } from "react-router-dom";
 
 const UpcomingEvents = () => {
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -44,9 +46,25 @@ const UpcomingEvents = () => {
             </h2>
 
             {events.length === 0 ? (
-              <p className="text-center my-10 text-2xl sm:text-4xl font-bold">
-                No upcoming events right now.
-              </p>
+              <>
+                <p className="text-center my-10 text-2xl sm:text-4xl font-bold">
+                  No upcoming events right now.
+                </p>
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => navigate("/PastEvents")}
+                    className="w-full sm:w-auto text-white px-6 py-2 cursor-pointer font-bold shadow-[0_5px_15px_rgb(238,238,238,0.4)] bg-transparent rounded-lg border border-1 border-white hover:bg-white/10 transition-colors text-sm whitespace-nowrap"
+                  >
+                    View Past Events
+                  </button>
+                  <button
+                    onClick={() => navigate("/")}
+                    className="ml-10 w-full sm:w-auto text-white px-6 py-2 cursor-pointer font-bold shadow-[0_5px_15px_rgb(238,238,238,0.4)] bg-transparent rounded-lg border border-1 border-white hover:bg-white/10 transition-colors text-sm whitespace-nowrap"
+                  >
+                    View Ongoing Events
+                  </button>
+                </div>
+              </>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {events.map((event) => (
