@@ -71,9 +71,9 @@ export default function AnnouncementsList() {
                   <small className="text-gray-400 italic">
                     Posted by{" "}
                     <span className="text-green-400">
-                      {a.authorId?.name || "Unknown"}
+                      {a.author?.name || "Unknown"}
                     </span>{" "}
-                    ({a.authorRole}) on{" "}
+                    ({a.author?.source || a.authorRole || "unknown"}) on{" "}
                     <span className="text-emerald-400">
                       {new Date(a.createdAt).toLocaleString()}
                     </span>

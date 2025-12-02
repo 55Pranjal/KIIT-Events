@@ -158,11 +158,11 @@ const Dashboard = () => {
                 <button
                   onClick={() => {
                     console.log("🗂 Navigating to Requests Page");
-                    navigate("/RequestPage");
+                    navigate("/SocietyDetails");
                   }}
                   className="font-semibold text-sm bg-gradient-to-r from-green-600 to-green-800 hover:from-green-500 hover:to-green-700 transition-all text-white rounded-md px-4 py-2 w-full sm:w-48 shadow-md"
                 >
-                  Requests
+                  Societies
                 </button>
 
                 <button

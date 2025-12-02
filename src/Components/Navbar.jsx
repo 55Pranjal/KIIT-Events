@@ -17,13 +17,28 @@ const Navbar = () => {
         return;
       }
 
+      // try {
+      //   await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/protected`, {
+      //     headers: { Authorization: `Bearer ${token}` },
+      //   });
+      //   const decoded = jwtDecode(token);
+      //   setUser(decoded);
+      // } catch (error) {
+      //   console.warn("Invalid or expired token");
+      //   localStorage.removeItem("token");
+      //   setUser(null);
+      //   window.dispatchEvent(new Event("authChange"));
+      // }
+
       try {
-        await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/protected`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const decoded = jwtDecode(token);
-        setUser(decoded);
-      } catch (error) {
+        const res = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/users/me`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setUser(res.data);
+      } catch (err) {
         console.warn("Invalid or expired token");
         localStorage.removeItem("token");
         setUser(null);
@@ -87,7 +102,7 @@ const Navbar = () => {
           </li>
           <li>
             <button
-              onClick={() => handleNavigation("/Upcoming")}
+              onClick={() => handleNavigation("/EventsPage")}
               className="hover:text-emerald-400 transition"
             >
               Events

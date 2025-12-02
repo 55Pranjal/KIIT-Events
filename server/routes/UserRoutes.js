@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import verifyToken from "../middleware/auth.js";
+import Society from "../models/Society.js";
 
 const router = express.Router();
 
@@ -118,26 +119,44 @@ router.post("/login", async (req, res) => {
 // =============================
 // 👤 Get Current User Info
 // =============================
-router.get("/me", async (req, res) => {
+// router.get("/me", async (req, res) => {
+//   try {
+//     console.info("[GET] /api/users/me - Fetching current user details");
+
+//     const authHeader = req.headers.authorization;
+//     if (!authHeader) {
+//       console.warn("[WARN] No token provided in /me route");
+//       return res.status(401).json({ error: "No token provided" });
+//     }
+
+//     const token = authHeader.split(" ")[1];
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+//     const user = await User.findById(decoded.id, { password: 0 });
+//     if (!user) {
+//       console.warn(`[WARN] User not found for ID: ${decoded.id}`);
+//       return res.status(404).json({ error: "User not found" });
+//     }
+
+//     console.info(`[INFO] User details fetched for: ${user.email}`);
+//     res.status(200).json(user);
+//   } catch (err) {
+//     console.error("[ERROR] Failed to fetch user:", err.message);
+//     res.status(500).json({ error: "Server error while fetching user" });
+//   }
+// });
+
+router.get("/me", verifyToken, async (req, res) => {
   try {
-    console.info("[GET] /api/users/me - Fetching current user details");
-
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      console.warn("[WARN] No token provided in /me route");
-      return res.status(401).json({ error: "No token provided" });
-    }
-
-    const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    const user = await User.findById(decoded.id, { password: 0 });
+    console.info(
+      "[GET] /api/users/me - Fetching current user details for",
+      req.user.id
+    );
+    const user = await User.findById(req.user.id).select("-password");
     if (!user) {
-      console.warn(`[WARN] User not found for ID: ${decoded.id}`);
+      console.warn(`[WARN] User not found for ID: ${req.user.id}`);
       return res.status(404).json({ error: "User not found" });
     }
-
-    console.info(`[INFO] User details fetched for: ${user.email}`);
     res.status(200).json(user);
   } catch (err) {
     console.error("[ERROR] Failed to fetch user:", err.message);
@@ -165,6 +184,52 @@ router.put("/update", verifyToken, async (req, res) => {
   } catch (error) {
     console.error("[ERROR] Failed to update user:", error.message);
     res.status(500).json({ error: "Server error while updating user" });
+  }
+});
+
+/**
+ * GET /api/society-accounts
+ * Returns list of societies from Society collection
+ * Only societies with requestStatus === "approved"
+ */
+router.get("/", verifyToken, async (req, res) => {
+  try {
+    // Optional: allow only admins
+    // if (req.user.role !== "admin") {
+    //   return res.status(403).json({ message: "Forbidden" });
+    // }
+
+    const societies = await Society.find(
+      { requestStatus: "approved" }, // <-- filter here
+      { name: 1 } // return only name + _id
+    )
+      .sort({ name: 1 })
+      .lean();
+
+    return res.json(societies);
+  } catch (err) {
+    console.error("[SocietyAccounts] Error fetching societies:", err);
+    return res.status(500).json({ message: "Failed to fetch societies" });
+  }
+});
+
+/**
+ * Public list of societies (approved only)
+ * GET /api/society-accounts/public
+ */
+router.get("/public", async (req, res) => {
+  try {
+    const societies = await Society.find(
+      { requestStatus: "approved" },
+      { name: 1 }
+    )
+      .sort({ name: 1 })
+      .lean();
+
+    return res.json(societies);
+  } catch (err) {
+    console.error("[SocietyAccounts.public] Error fetching societies:", err);
+    return res.status(500).json({ message: "Failed to fetch societies" });
   }
 });
 

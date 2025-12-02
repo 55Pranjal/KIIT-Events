@@ -32,6 +32,8 @@ import AnnouncementsList from "./Components/AnnouncementsList";
 import CreateAnnouncement from "./Components/CreateAnnouncement";
 import AdminQueries from "./Components/AdminQueryPage";
 import PastEvents from "./Components/PastEvents";
+import SocietyDetails from "./Components/SocietyDetails";
+import EventsPage from "./Components/EventsPage";
 
 function App() {
   const navigate = useNavigate();
@@ -95,6 +97,8 @@ function App() {
         <Route path="/CreateAnnouncements" element={<CreateAnnouncement />} />
         <Route path="/AdminQueriesPage" element={<AdminQueries />} />
         <Route path="/PastEvents" element={<PastEvents />} />
+        <Route path="/SocietyDetails" element={<SocietyDetails />} />
+        <Route path="/EventsPage" element={<EventsPage />} />
       </Routes>
     </>
   );
