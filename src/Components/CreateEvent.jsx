@@ -416,6 +416,19 @@ const CreateEvent = () => {
     return url;
   }
 
+  // NEW: resolve relative backend URLs (like "/uploads/xxx.png") to full URLs
+  const resolveImageUrl = (url) => {
+    if (!url) return "";
+    // already absolute (http/https)
+    if (/^https?:\/\//i.test(url)) return url;
+    // relative path (starts with '/')
+    if (url.startsWith("/")) {
+      if (!BACKEND) return url; // fallback: return as-is
+      return `${BACKEND}${url}`;
+    }
+    return url;
+  };
+
   const validateDate = (selected) => {
     const selectedDate = new Date(selected);
     const today = new Date();
@@ -491,7 +504,10 @@ const CreateEvent = () => {
         return;
       }
 
-      const normalizedURL = normalizeDriveURL(coverImageURL);
+      // normalize Drive URLs and resolve relative backend URLs
+      let normalizedURL = normalizeDriveURL(coverImageURL);
+      normalizedURL = resolveImageUrl(normalizedURL);
+
       const finalCategory =
         eventCategory === "Other" ? customCategory : eventCategory;
 
@@ -754,7 +770,7 @@ const CreateEvent = () => {
               {coverImageURL && (
                 <div className="mt-3 flex justify-center">
                   <img
-                    src={coverImageURL}
+                    src={resolveImageUrl(coverImageURL)}
                     alt="poster preview"
                     onError={(e) => {
                       e.currentTarget.src = ""; // hide broken image
@@ -767,7 +783,7 @@ const CreateEvent = () => {
 
             <button
               type="submit"
-              className="mt-2 font-semibold bg-gradient-to-r from-green-700 to-emerald-600 text-white rounded-lg py-2.5 w-full sm:w-1/2 mx-auto hover:scale-[1.02] hover:shadow-[0_0_10px_#00ff88aa] transition-all duration-300"
+              className="mt-2 font-semibold bg-gradient-to-r from-green-700 to-emerald-600 text-white rounded-  lg py-2.5 w-full sm:w-1/2 mx-auto hover:scale-[1.02] hover:shadow-[0_0_10px_#00ff88aa] transition-all duration-300"
             >
               Create Event
             </button>
