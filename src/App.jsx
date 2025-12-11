@@ -34,9 +34,18 @@ import AdminQueries from "./Components/AdminQueryPage";
 import PastEvents from "./Components/PastEvents";
 import SocietyDetails from "./Components/SocietyDetails";
 import EventsPage from "./Components/EventsPage";
+import CreateHighlights from "./Components/CreateHighlights";
+import EventHighlightSingle from "./Components/EventHighlights";
+import LoadingPage from "./Components/LoadingPage";
 
 function App() {
   const navigate = useNavigate();
+  useEffect(() => {
+    // only run on first load, not on internal navigation
+    if (window.location.pathname === "/") {
+      navigate("/loading", { replace: true });
+    }
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -69,9 +78,11 @@ function App() {
       onClick: () => alert("Settings!"),
     },
   ];
+
   return (
     <>
       <Routes>
+        <Route path="/loading" element={<LoadingPage />} />
         <Route path="/" element={<LandingScreen />} />
         <Route path="/Login" element={<Login />} />
         <Route path="/SignUp" element={<SignUp />} />
@@ -99,6 +110,12 @@ function App() {
         <Route path="/PastEvents" element={<PastEvents />} />
         <Route path="/SocietyDetails" element={<SocietyDetails />} />
         <Route path="/EventsPage" element={<EventsPage />} />
+        <Route path="/CreateHighlights" element={<CreateHighlights />} />
+        <Route
+          path="/events/:eventId/highlights"
+          element={<EventHighlightSingle />}
+        />
+        <Route path="*" element={<LoadingPage />} />
       </Routes>
     </>
   );
