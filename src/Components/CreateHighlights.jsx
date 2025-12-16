@@ -31,6 +31,12 @@ export default function CreateHighlight() {
 
   const token = localStorage.getItem("token");
 
+  const MAX_SHORT_DESC_CHARS = 400;
+
+  // returns true if short description exceeds limit
+  const isShortDescriptionInvalid = () =>
+    shortDescription.length > MAX_SHORT_DESC_CHARS;
+
   useEffect(() => {
     axios
       .get(`${BACKEND}/api/events/all`)
@@ -307,11 +313,19 @@ export default function CreateHighlight() {
             {/* SHORT DESCRIPTION */}
             <textarea
               rows={2}
-              placeholder="Short Description"
+              placeholder="Short Description (max 400 characters)"
               value={shortDescription}
               onChange={(e) => setShortDescription(e.target.value)}
               className="rounded-lg p-3 bg-[#0d1b12] border border-green-700/40 resize-none"
             />
+
+            <p
+              className={`text-sm text-right mt-1 ${
+                isShortDescriptionInvalid() ? "text-red-400" : "text-green-300"
+              }`}
+            >
+              {shortDescription.length} / {MAX_SHORT_DESC_CHARS} characters
+            </p>
 
             {/* LONG DESCRIPTION */}
             <textarea
@@ -527,7 +541,14 @@ export default function CreateHighlight() {
             {/* SUBMIT */}
             <button
               type="submit"
-              className="mt-4 font-semibold bg-gradient-to-r from-green-700 to-emerald-600 text-white rounded-lg py-2.5 hover:scale-[1.02] transition-all duration-300"
+              disabled={isShortDescriptionInvalid()}
+              className={`mt-4 font-semibold rounded-lg py-2.5 transition-all duration-300
+    ${
+      isShortDescriptionInvalid()
+        ? "bg-gray-600 cursor-not-allowed"
+        : "bg-gradient-to-r from-green-700 to-emerald-600 hover:scale-[1.02]"
+    }
+  `}
             >
               Create Highlight
             </button>

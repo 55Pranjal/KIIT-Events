@@ -200,7 +200,7 @@ const Navbar = () => {
                     item === "Home"
                       ? "/"
                       : item === "Events"
-                      ? "/Upcoming"
+                      ? "/EventsPage"
                       : `/${item}`
                   )
                 }
