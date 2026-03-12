@@ -4,7 +4,7 @@ A full-stack event discovery and management platform built for university studen
 
 ## Live Demo
 
-[View Live](YOUR_DEPLOYMENT_LINK)
+[View Live](https://kiitevents.netlify.app/)
 
 ## Screenshots
 
