@@ -10,12 +10,6 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import EventDetails from "./Components/EventDetails";
-import {
-  VscHome,
-  VscArchive,
-  VscAccount,
-  VscSettingsGear,
-} from "react-icons/vsc";
 
 import CreateEvent from "./Components/CreateEvent";
 
@@ -56,28 +50,6 @@ function App() {
       navigate("/");
     }
   }, [navigate]);
-  const items = [
-    {
-      icon: <VscHome size={18} />,
-      label: "Home",
-      onClick: () => alert("Home!"),
-    },
-    {
-      icon: <VscArchive size={18} />,
-      label: "Archive",
-      onClick: () => alert("Archive!"),
-    },
-    {
-      icon: <VscAccount size={18} />,
-      label: "Profile",
-      onClick: () => alert("Profile!"),
-    },
-    {
-      icon: <VscSettingsGear size={18} />,
-      label: "Settings",
-      onClick: () => alert("Settings!"),
-    },
-  ];
 
   return (
     <>
