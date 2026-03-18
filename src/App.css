@@ -6,6 +6,10 @@ body {
   padding: 0;
 }
 
+* {
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
 #root {
   min-height: 100vh;
   display: flex;

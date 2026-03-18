@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { FiSearch } from "react-icons/fi";
 
 const MainSection = () => {
   const navigate = useNavigate();
@@ -15,8 +16,19 @@ const MainSection = () => {
   const [societyAccounts, setSocietyAccounts] = useState([]); // [{ _id, name }]
   const [loadingSocietyAccounts, setLoadingSocietyAccounts] = useState(false);
   const [societyAccountsError, setSocietyAccountsError] = useState("");
+  const [showSocietyDropdown, setShowSocietyDropdown] = useState(false);
 
   const BACKEND = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest("[data-dropdown]")) {
+        setShowSocietyDropdown(false);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
 
   // fetch current user
   useEffect(() => {
@@ -117,14 +129,19 @@ const MainSection = () => {
   });
 
   return (
-    <div className="bg-[#f5f5f2]">
+    <div>
       {/* HERO SECTION */}
-      <div className="text-center min-h-[70vh] flex flex-col justify-center items-center px-4 md:px-8 lg:px-16">
+      <div className="text-center min-h-[70vh] flex flex-col justify-center items-center px-4 md:px-8 lg:px-16 bg-[#f5f5f2]">
         {/* Heading */}
-        <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-[#111] leading-tight max-w-4xl">
-          Discover <span className="text-emerald-600">Unforgettable</span>
-          <br />
-          Experiences
+        <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-[#111] leading-[1.1] max-w-4xl tracking-tight">
+          <span className="inline-block">
+            Discover{" "}
+            <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">
+              Unforgettable
+            </span>
+          </span>
+          <br className="hidden sm:block" />
+          <span className="inline-block">Experiences</span>
         </h1>
 
         {/* Subtitle */}
@@ -133,50 +150,146 @@ const MainSection = () => {
           around campus in one place.
         </p>
 
-        {/* Search */}
+        {/* Search + Society Filter */}
         <div className="mt-10 w-full flex justify-center">
-          <div className="w-full max-w-3xl flex items-center bg-white border border-[#e5e5e5] rounded-xl shadow-sm px-5 py-4">
+          <div className="w-full max-w-3xl bg-white border border-[#e5e5e5] rounded-xl shadow-2xl px-4 py-3 flex items-center gap-2">
+            {/* Search Icon */}
+            <FiSearch className="text-gray-400 text-xl flex-shrink-0 ml-1" />
+
+            {/* Search Input */}
             <input
               type="text"
-              placeholder="Search events by name, society, or keyword..."
-              className="w-full outline-none text-[#111] placeholder-gray-400 text-sm md:text-base"
+              placeholder="Search events by name or keyword..."
+              className="flex-1 outline-none text-[#111] placeholder-gray-400 text-sm md:text-base bg-transparent"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
 
-            <button className="ml-3 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white text-sm md:text-base rounded-lg font-medium transition">
+            {/* Vertical Divider */}
+            <div className="w-px h-6 bg-gray-200 flex-shrink-0" />
+
+            {/* Society Dropdown */}
+            <div className="relative flex-shrink-0" data-dropdown>
+              <button
+                onClick={() => setShowSocietyDropdown(!showSocietyDropdown)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                  selectedSociety && selectedSociety !== "All"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : "text-gray-500 border-transparent hover:bg-gray-50 hover:border-gray-200"
+                }`}
+              >
+                {/* Filter Icon */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-4 h-4 flex-shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                </svg>
+
+                <span className="max-w-[110px] truncate">
+                  {selectedSociety && selectedSociety !== "All"
+                    ? selectedSociety
+                    : "Filter"}
+                </span>
+
+                {/* Chevron */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={`w-3.5 h-3.5 transition-transform duration-200 flex-shrink-0 ${
+                    showSocietyDropdown ? "rotate-180" : ""
+                  }`}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+
+                {/* Active dot indicator */}
+                {selectedSociety && selectedSociety !== "All" && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full" />
+                )}
+              </button>
+
+              {/* Dropdown Menu */}
+              {showSocietyDropdown && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-[#e5e5e5] rounded-xl shadow-xl z-50 overflow-hidden">
+                  {/* Dropdown Header */}
+                  <div className="px-4 py-2.5 border-b border-[#f0f0f0] flex items-center justify-between">
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                      Society
+                    </span>
+                    {selectedSociety && selectedSociety !== "All" && (
+                      <button
+                        onClick={() => {
+                          setSelectedSociety("All");
+                          setShowSocietyDropdown(false);
+                        }}
+                        className="text-xs text-emerald-600 hover:text-emerald-700 font-medium transition"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Scrollable List */}
+                  <div className="max-h-60 overflow-y-auto py-1">
+                    {societies.map((soc) => (
+                      <button
+                        key={soc}
+                        onClick={() => {
+                          setSelectedSociety(soc);
+                          setShowSocietyDropdown(false);
+                        }}
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between group ${
+                          selectedSociety === soc
+                            ? "bg-emerald-50 text-emerald-700 font-semibold"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        }`}
+                      >
+                        <span>{soc}</span>
+                        {selectedSociety === soc && (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="w-4 h-4 text-emerald-500"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Vertical Divider */}
+            <div className="w-px h-6 bg-gray-200 flex-shrink-0" />
+
+            {/* Search Button */}
+            <button className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white text-sm font-medium rounded-lg transition-all flex-shrink-0 shadow-sm">
               Search
             </button>
           </div>
         </div>
       </div>
 
-      {/* FILTERS */}
-      <div className="mt-10 px-4 md:px-8 lg:px-16 xl:px-24 flex flex-wrap gap-2 justify-center">
-        {(showAllSocieties ? societies : societies.slice(0, 6)).map((soc) => (
-          <button
-            key={soc}
-            onClick={() => setSelectedSociety(soc)}
-            className={`px-3 py-1.5 rounded-full text-xs sm:text-sm border transition ${
-              selectedSociety === soc
-                ? "bg-emerald-500 text-white border-emerald-500"
-                : "bg-white text-gray-600 border-[#e5e5e5] hover:bg-gray-100"
-            }`}
-          >
-            {soc}
-          </button>
-        ))}
-
-        {/* ✅ Show More / Less Button */}
-        {societies.length > 6 && (
-          <button
-            onClick={() => setShowAllSocieties(!showAllSocieties)}
-            className="px-3 py-1.5 rounded-full text-xs sm:text-sm border border-[#ddd] text-gray-600 hover:bg-gray-100"
-          >
-            {showAllSocieties ? "Show Less ▲" : "Show More ▼"}
-          </button>
-        )}
-      </div>
+      <div className="border border-1 border-black/5"></div>
 
       {/* EVENTS SECTION */}
       <div className="mt-12 px-4 md:px-8 lg:px-16 xl:px-24">
