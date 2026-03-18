@@ -131,7 +131,7 @@ const MainSection = () => {
   return (
     <div>
       {/* HERO SECTION */}
-      <div className="text-center min-h-[70vh] flex flex-col justify-center items-center px-4 md:px-8 lg:px-16 bg-[#f5f5f2]">
+      <div className="text-center min-h-[70vh] flex flex-col justify-center items-center px-4 md:px-8 lg:px-16 bg-[#fffffb]">
         {/* Heading */}
         <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-[#111] leading-[1.1] max-w-4xl tracking-tight">
           <span className="inline-block">
