@@ -20,42 +20,39 @@ export default function LoadingPage() {
   }, []);
 
   return (
-    <div className="w-screen h-screen flex items-center justify-center bg-gradient-to-br from-black/90 via-[#001a00]/90 to-[#003300]/90 text-white px-6">
-      <div className="text-center animate-fadeIn">
-        {/* Glowing logo badge */}
-        <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-green-700 to-emerald-600 flex items-center justify-center shadow-[0_0_35px_-8px_rgba(0,255,100,0.5)] border border-green-400/20 backdrop-blur-xl">
-          <p className="text-3xl font-bold tracking-wide bg-gradient-to-r from-green-300 to-emerald-500 bg-clip-text text-transparent">
+    <div className="w-screen h-screen flex items-center justify-center bg-[#f5f5f2] px-6">
+      <div className="text-center">
+        {/* Logo Badge (clean, not glowing) */}
+        <div className="w-20 h-20 mx-auto rounded-full bg-emerald-100 flex items-center justify-center shadow-md">
+          <p className="text-2xl font-bold text-emerald-600 tracking-wide">
             KIIT
           </p>
         </div>
 
         {/* Heading */}
-        <h2 className="mt-6 text-2xl font-semibold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
+        <h2 className="mt-6 text-xl md:text-2xl font-semibold text-[#111]">
           Initializing Server…
         </h2>
 
         {/* Subtitle */}
-        <p className="mt-2 text-green-200/70 text-sm leading-relaxed">
-          Backend is waking up from Render sleep mode.
+        <p className="mt-2 text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">
+          Backend is waking up from sleep mode.
           <br />
           This usually takes 20–60 seconds.
         </p>
 
-        {/* Animated Loader Dots */}
-        <div className="mt-6 flex justify-center gap-3">
-          <span className="w-3 h-3 rounded-full bg-green-400 animate-bounce"></span>
+        {/* Loader */}
+        <div className="mt-6 flex justify-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-bounce"></span>
           <span
-            className="w-3 h-3 rounded-full bg-green-400 animate-bounce"
+            className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-bounce"
             style={{ animationDelay: "0.15s" }}
           ></span>
           <span
-            className="w-3 h-3 rounded-full bg-green-400 animate-bounce"
+            className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-bounce"
             style={{ animationDelay: "0.3s" }}
           ></span>
         </div>
-
-        {/* Soft Glow Under Loader */}
-        <div className="mt-6 w-32 h-2 mx-auto rounded-full bg-green-500/10 blur-xl"></div>
       </div>
     </div>
   );
