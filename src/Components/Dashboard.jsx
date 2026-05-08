@@ -3,6 +3,9 @@ import axios from "axios";
 import Navbar from "./Navbar";
 import { useNavigate } from "react-router-dom";
 import Footer from "./Footer";
+import Doodles from "./Doodles";
+import { optimizeCard } from "../utils/imageOptimization";
+import { formatEventDateTime } from "../utils/formatDate";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -13,28 +16,28 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      console.log("🔍 Fetching dashboard data...");
+      console.log("Fetching dashboard data...");
 
       try {
         const token = localStorage.getItem("token");
         if (!token) {
-          console.warn("⚠️ No token found — user not logged in.");
+          console.warn("No token found — user not logged in.");
           setError("Not logged in");
           return;
         }
 
-        console.log("📤 Fetching user details...");
+        console.log("Fetching user details...");
         const resUser = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/api/users/me`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const fetchedUser = resUser.data;
-        console.log("✅ User data fetched:", fetchedUser);
+        console.log("User data fetched:", fetchedUser);
         setUser(fetchedUser);
 
         let eventsRes;
         if (fetchedUser.role === "student") {
-          console.log("🎟 Fetching registered events for student...");
+          console.log("Fetching registered events for student...");
           eventsRes = await axios.get(
             `${import.meta.env.VITE_BACKEND_URL}/api/registers/my`,
             { headers: { Authorization: `Bearer ${token}` } }
@@ -43,20 +46,20 @@ const Dashboard = () => {
           fetchedUser.role === "society" ||
           fetchedUser.role === "admin"
         ) {
-          console.log("🏛 Fetching events created by society/admin...");
+          console.log("Fetching events created by society/admin...");
           eventsRes = await axios.get(
             `${import.meta.env.VITE_BACKEND_URL}/api/societies/my-events`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
         }
 
-        console.log("✅ Events fetched successfully:", eventsRes.data);
+        console.log("Events fetched successfully:", eventsRes.data);
         setEvents(eventsRes.data);
       } catch (err) {
-        console.error("❌ Error fetching data:", err);
+        console.error("Error fetching data:", err);
         setError("Failed to fetch data");
       } finally {
-        console.log("⏳ Data fetching complete.");
+        console.log("Data fetching complete.");
         setLoading(false);
       }
     };
@@ -65,21 +68,25 @@ const Dashboard = () => {
   }, []);
 
   if (error) {
-    console.warn("⚠️ Dashboard error:", error);
-    return <p className="text-red-500 text-center mt-10">{error}</p>;
+    return (
+      <>
+        <Navbar />
+        <p className="text-red-500 text-center mt-10 px-4">{error}</p>
+        <Footer />
+      </>
+    );
   }
 
   if (loading) {
-    console.log("⏳ Loading dashboard...");
-    return <p className="text-white text-center mt-10">Loading...</p>;
+    return (
+      <>
+        <Navbar />
+        <p className="text-gray-500 text-center mt-10 px-4">Loading...</p>
+      </>
+    );
   }
 
-  if (!user) {
-    console.warn("⚠️ User object is null — returning nothing.");
-    return null;
-  }
-
-  console.log("👤 Rendering dashboard for user:", user.role);
+  if (!user) return null;
 
   const infoRows = [
     { label: "Username", value: user.name },
@@ -95,59 +102,95 @@ const Dashboard = () => {
     });
   }
 
+  const primaryBtn =
+    "font-medium text-sm bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white rounded-lg px-4 py-2.5 w-full sm:w-auto sm:min-w-[12rem] shadow-sm transition-all";
+  const outlineBtn =
+    "font-medium text-sm border border-[#e5e5e5] text-[#333] hover:bg-gray-50 hover:border-emerald-200 rounded-lg px-4 py-2.5 w-full sm:w-auto sm:min-w-[12rem] transition-all";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-[#003300] to-black text-white flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <main className="flex-grow">
-        <div className="max-w-4xl mx-auto mt-10 bg-[#0a1a0a]/80 backdrop-blur-md text-white rounded-2xl shadow-[0_0_15px_rgba(0,255,100,0.25)] p-6 sm:p-10">
-          <h1 className="font-bold text-3xl text-center mb-6 text-green-400">
-            Your Details
-          </h1>
+      <div className="relative flex-grow overflow-hidden flex flex-col">
+        <Doodles variant="hero" />
+        <main className="relative z-10 flex-grow max-w-6xl mx-auto w-full px-4 sm:px-6 py-10">
+        {/* Profile Card */}
+        <div className="bg-white border border-[#e5e5e5] rounded-2xl shadow-sm p-6 sm:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <div>
+              <h1 className="font-display text-2xl md:text-3xl font-bold text-[#111] tracking-tightish">
+                Your Details
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Manage your profile and view your activity.
+              </p>
+            </div>
+            <span className="inline-flex items-center self-start gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold uppercase tracking-wider border border-emerald-100">
+              {user.role}
+            </span>
+          </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {infoRows.map((row, index) => (
               <div
                 key={index}
-                className="flex flex-col sm:flex-row sm:justify-between bg-black/40 border border-green-700 rounded-lg p-3 hover:border-green-500 transition-all"
+                className="bg-[#f7faf8] border border-[#eeeeea] rounded-lg px-4 py-3"
               >
-                <p className="font-semibold text-green-300">{row.label}:</p>
-                <p>{row.value}</p>
+                <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-0.5">
+                  {row.label}
+                </p>
+                <p className="text-[#111] font-medium text-sm break-words">
+                  {row.value || "—"}
+                </p>
               </div>
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-4 mt-8 justify-center">
+          <div className="flex flex-wrap gap-3 mt-8">
             <button
-              onClick={() => {
-                console.log("🖋 Navigating to Edit Profile");
-                navigate("/EditProfile");
-              }}
-              className="font-semibold text-sm bg-gradient-to-r from-green-600 to-green-800 hover:from-green-500 hover:to-green-700 transition-all text-white rounded-md px-4 py-2 w-full sm:w-48 shadow-md"
+              onClick={() => navigate("/EditProfile")}
+              className={outlineBtn}
             >
               Edit Profile
             </button>
 
             {user.role === "society" && (
               <button
-                onClick={() => {
-                  console.log("🏛 Navigating to Edit Society Info");
-                  navigate("/EditSociety");
-                }}
-                className="font-semibold text-sm bg-gradient-to-r from-emerald-600 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 transition-all text-white rounded-md px-4 py-2 w-full sm:w-48 shadow-md"
+                onClick={() => navigate("/EditSociety")}
+                className={outlineBtn}
               >
                 Edit Society Info
               </button>
             )}
 
+            {(user.role === "admin" || user.role === "society") && (
+              <>
+                <button
+                  onClick={() => navigate("/CreateEvent")}
+                  className={primaryBtn}
+                >
+                  Create Event
+                </button>
+                <button
+                  onClick={() => navigate("/CreateAnnouncements")}
+                  className={primaryBtn}
+                >
+                  Create Announcement
+                </button>
+                <button
+                  onClick={() => navigate("/CreateHighlights")}
+                  className={primaryBtn}
+                >
+                  Create Highlight
+                </button>
+              </>
+            )}
+
             {user.role === "student" &&
               user.societyRequestStatus === "none" && (
                 <button
-                  onClick={() => {
-                    console.log("📨 Navigating to Society Request Form");
-                    navigate("/SocietyRequestForm");
-                  }}
-                  className="font-semibold text-sm bg-gradient-to-r from-green-600 to-green-800 hover:from-green-500 hover:to-green-700 transition-all text-white rounded-md px-4 py-2 w-full sm:w-48 shadow-md"
+                  onClick={() => navigate("/SocietyRequestForm")}
+                  className={outlineBtn}
                 >
                   Request Upgrade to Society
                 </button>
@@ -156,21 +199,14 @@ const Dashboard = () => {
             {user.role === "admin" && (
               <>
                 <button
-                  onClick={() => {
-                    console.log("🗂 Navigating to Requests Page");
-                    navigate("/SocietyDetails");
-                  }}
-                  className="font-semibold text-sm bg-gradient-to-r from-green-600 to-green-800 hover:from-green-500 hover:to-green-700 transition-all text-white rounded-md px-4 py-2 w-full sm:w-48 shadow-md"
+                  onClick={() => navigate("/SocietyDetails")}
+                  className={outlineBtn}
                 >
                   Societies
                 </button>
-
                 <button
-                  onClick={() => {
-                    console.log("📬 Navigating to Admin Queries Page");
-                    navigate("/AdminQueriesPage");
-                  }}
-                  className="font-semibold text-sm bg-gradient-to-r from-green-600 to-green-800 hover:from-green-500 hover:to-green-700 transition-all text-white rounded-md px-4 py-2 w-full sm:w-48 shadow-md"
+                  onClick={() => navigate("/AdminQueriesPage")}
+                  className={outlineBtn}
                 >
                   Queries
                 </button>
@@ -179,78 +215,92 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto mt-12 mb-12 px-4">
-          <h2 className="text-2xl font-bold mb-6 text-center text-green-400 drop-shadow-md">
-            {user.role === "student"
-              ? "My Registered Events"
-              : "Events You Created"}
-          </h2>
+        {/* Events Section */}
+        <div className="mt-12">
+          <div className="mb-6">
+            <h2 className="font-display text-xl md:text-2xl font-semibold text-[#111] tracking-tightish">
+              {user.role === "student"
+                ? "My Registered Events"
+                : "Events You Created"}
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              {user.role === "student"
+                ? "All the events you've signed up for."
+                : "All the events under your name."}
+            </p>
+          </div>
 
           {events.length === 0 ? (
-            <p className="text-center text-gray-300">
-              {user.role === "student"
-                ? "You haven’t registered for any events yet."
-                : "You haven’t created any events yet."}
-            </p>
+            <div className="bg-white border border-dashed border-[#e5e5e5] rounded-xl p-10 text-center">
+              <p className="text-gray-500">
+                {user.role === "student"
+                  ? "You haven't registered for any events yet."
+                  : "You haven't created any events yet."}
+              </p>
+            </div>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {events.map((event) => (
                 <div
                   key={event._id}
-                  className="bg-black/50 border border-green-800 rounded-xl p-4 shadow-[0_0_15px_rgba(0,255,100,0.2)] hover:shadow-[0_0_25px_rgba(0,255,100,0.4)] transition-all"
+                  className="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden flex flex-col transition-all duration-300 ease-out hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01] group"
                 >
                   {event.coverImageURL && (
                     <img
-                      src={event.coverImageURL}
+                      src={optimizeCard(event.coverImageURL)}
                       alt={event.title}
-                      className="w-full h-40 object-cover rounded-md mb-3 border border-green-700"
+                      loading="lazy"
+                      className="w-full h-40 object-cover bg-gray-100"
                     />
                   )}
-                  <h3 className="text-xl font-bold mb-1 text-green-300">
-                    {event.title}
-                  </h3>
-                  <p className="text-gray-300 text-sm mb-1">
-                    {event.description}
-                  </p>
-                  <p className="text-gray-200">
-                    📅 {event.date} at {event.time}
-                  </p>
-                  <p className="text-gray-200">📍 {event.location}</p>
-                  <p className="text-gray-200">📂 {event.eventCategory}</p>
 
-                  {(user.role === "society" || user.role === "admin") && (
-                    <div className="mt-4 flex flex-col gap-2">
-                      <button
-                        onClick={() => {
-                          console.log(
-                            `👥 Viewing registered students for event: ${event._id}`
-                          );
-                          navigate(`/events/${event._id}/registrations`);
-                        }}
-                        className="font-semibold text-sm bg-gradient-to-r from-green-700 to-green-900 hover:from-green-600 hover:to-green-800 text-white rounded-md px-4 py-2 transition-all shadow-md"
-                      >
-                        View Registered Students
-                      </button>
+                  <div className="p-4 flex flex-col flex-1">
+                    <h3 className="text-[#111] font-semibold text-base line-clamp-2 group-hover:text-emerald-600 transition-colors">
+                      {event.title}
+                    </h3>
+                    {event.description && (
+                      <p className="text-gray-500 text-xs mt-1 line-clamp-2">
+                        {event.description}
+                      </p>
+                    )}
 
-                      {user.role === "admin" && (
-                        <button
-                          onClick={() => {
-                            console.log(`📝 Editing event: ${event._id}`);
-                            navigate(`/edit-event/${event._id}`);
-                          }}
-                          className="font-semibold text-sm bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 text-white rounded-md px-4 py-2 transition-all shadow-md"
-                        >
-                          Edit Event
-                        </button>
-                      )}
+                    <div className="text-gray-400 text-xs mt-3 space-y-0.5">
+                      <p>{formatEventDateTime(event.date, event.time)}</p>
+                      <p>{event.location}</p>
+                      {event.eventCategory && <p>{event.eventCategory}</p>}
                     </div>
-                  )}
+
+                    {(user.role === "society" || user.role === "admin") && (
+                      <div className="mt-4 pt-3 border-t border-[#eee] flex flex-col gap-2">
+                        <button
+                          onClick={() =>
+                            navigate(`/events/${event._id}/registrations`)
+                          }
+                          className="text-xs px-3 py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-white font-medium shadow-sm transition"
+                        >
+                          View Registered Students
+                        </button>
+
+                        {user.role === "admin" && (
+                          <button
+                            onClick={() =>
+                              navigate(`/edit-event/${event._id}`)
+                            }
+                            className="text-xs px-3 py-2 rounded-md border border-[#e5e5e5] text-[#333] hover:bg-gray-50 hover:border-emerald-200 font-medium transition"
+                          >
+                            Edit Event
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-      </main>
+        </main>
+      </div>
 
       <Footer />
     </div>

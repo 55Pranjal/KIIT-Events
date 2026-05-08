@@ -3,6 +3,9 @@ import axios from "axios";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { useNavigate } from "react-router-dom";
+import { optimizeCard } from "../utils/imageOptimization";
+import { formatEventDateTime } from "../utils/formatDate";
+import Doodles from "./Doodles";
 
 const UpcomingEvents = () => {
   const navigate = useNavigate();
@@ -12,19 +15,16 @@ const UpcomingEvents = () => {
 
   useEffect(() => {
     const fetchUpcomingEvents = async () => {
-      console.log("[UpcomingEvents] Fetching upcoming events...");
       try {
         const res = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/api/events/upcoming`
         );
-        console.log("[UpcomingEvents] Events fetched successfully:", res.data);
         setEvents(res.data);
       } catch (err) {
         console.error("[UpcomingEvents] Error fetching events:", err);
         setError("Failed to fetch upcoming events");
       } finally {
         setLoading(false);
-        console.log("[UpcomingEvents] Loading state set to false.");
       }
     };
 
@@ -32,80 +32,112 @@ const UpcomingEvents = () => {
   }, []);
 
   if (loading)
-    return <p className="text-white text-center mt-10">Loading...</p>;
-  if (error) return <p className="text-red-500 text-center mt-10">{error}</p>;
+    return (
+      <>
+        <Navbar />
+        <p className="text-gray-500 text-center mt-10">Loading...</p>
+      </>
+    );
+  if (error)
+    return (
+      <>
+        <Navbar />
+        <p className="text-red-500 text-center mt-10">{error}</p>
+      </>
+    );
+
+  const outlineBtn =
+    "text-sm border border-[#e5e5e5] text-[#333] hover:bg-gray-50 hover:border-emerald-200 font-medium rounded-lg px-5 py-2.5 transition-all";
 
   return (
-    <>
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex-grow px-4 sm:px-6 md:px-8">
-          <div className="max-w-7xl mx-auto mt-10 text-white">
-            <h2 className="text-3xl sm:text-4xl font-bold my-10 text-center">
-              Upcoming Events
-            </h2>
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      <div className="relative flex-grow overflow-hidden flex flex-col">
+        <Doodles variant="hero" />
+        <main className="relative z-10 flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 py-10">
+        <div className="mb-10 pt-2 text-center">
+          <h2 className="font-display text-3xl md:text-4xl font-bold text-[#111] tracking-tightish">
+            Upcoming{" "}
+            <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">
+              Events
+            </span>
+          </h2>
+          <p className="text-gray-500 mt-3">
+            Plan ahead — here's what's coming up around campus.
+          </p>
+        </div>
 
-            {events.length === 0 ? (
-              <>
-                <p className="text-center my-10 text-2xl sm:text-4xl font-bold">
-                  No upcoming events right now.
-                </p>
-                <div className="flex justify-center">
-                  <button
-                    onClick={() => navigate("/PastEvents")}
-                    className="w-full sm:w-auto text-white px-6 py-2 cursor-pointer font-bold shadow-[0_5px_15px_rgb(238,238,238,0.4)] bg-transparent rounded-lg border border-1 border-white hover:bg-white/10 transition-colors text-sm whitespace-nowrap"
-                  >
-                    View Past Events
-                  </button>
-                  <button
-                    onClick={() => navigate("/")}
-                    className="ml-10 w-full sm:w-auto text-white px-6 py-2 cursor-pointer font-bold shadow-[0_5px_15px_rgb(238,238,238,0.4)] bg-transparent rounded-lg border border-1 border-white hover:bg-white/10 transition-colors text-sm whitespace-nowrap"
-                  >
-                    View Ongoing Events
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {events.map((event) => (
-                  <div
-                    key={event._id}
-                    className="bg-black/50 border border-green-800 rounded-xl p-4 shadow-[0_0_15px_rgba(0,255,100,0.2)] hover:shadow-[0_0_25px_rgba(0,255,100,0.4)] transition-all w-full mx-auto my-4"
-                  >
-                    {event.coverImageURL && (
-                      <img
-                        src={event.coverImageURL}
-                        alt={event.title}
-                        className="w-full h-40 sm:h-48 object-cover rounded-md mb-3 border border-green-700"
-                      />
-                    )}
-                    <h3 className="text-lg sm:text-xl font-bold mb-1 text-green-300">
-                      {event.title}
-                    </h3>
-                    <p className="text-gray-300 text-sm sm:text-base">
+        {events.length === 0 ? (
+          <div className="bg-white border border-dashed border-[#e5e5e5] rounded-2xl p-12 text-center">
+            <p className="text-xl sm:text-2xl font-semibold text-[#111] mb-2">
+              No upcoming events right now.
+            </p>
+            <p className="text-gray-500 mb-6">
+              Check back soon, or browse other events below.
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <button
+                onClick={() => navigate("/PastEvents")}
+                className={outlineBtn}
+              >
+                View Past Events
+              </button>
+              <button onClick={() => navigate("/")} className={outlineBtn}>
+                View Ongoing Events
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {events.map((event) => (
+              <div
+                key={event._id}
+                className="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden flex flex-col transition-all duration-300 ease-out hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01] group"
+              >
+                {event.coverImageURL && (
+                  <img
+                    src={optimizeCard(event.coverImageURL)}
+                    alt={event.title}
+                    loading="lazy"
+                    className="w-full h-44 object-cover bg-gray-100"
+                  />
+                )}
+                <div className="p-4 flex flex-col flex-1">
+                  <h3 className="text-base sm:text-lg font-semibold text-[#111] group-hover:text-emerald-600 transition line-clamp-2">
+                    {event.title}
+                  </h3>
+                  {event.description && (
+                    <p className="text-gray-500 text-sm mt-1 line-clamp-2">
                       {event.description}
                     </p>
-                    <p className="text-gray-200 text-sm mb-1">
-                      📅 {event.date} at {event.time}
-                    </p>
-                    <p className="text-gray-200 text-sm mb-2">
-                      📍 {event.location}
-                    </p>
-                    <p className="text-gray-200 text-sm">
-                      📂 {event.eventCategory}
-                    </p>
-                    <p className="border-yellow-500 text-yellow-300 font-semibold mt-2 capitalize text-sm sm:text-base">
-                      {event.registrationStatus}
-                    </p>
+                  )}
+
+                  <div className="text-gray-400 text-xs mt-3 space-y-0.5">
+                    <p>{formatEventDateTime(event.date, event.time)}</p>
+                    <p>{event.location}</p>
+                    <p>{event.eventCategory}</p>
                   </div>
-                ))}
+
+                  <div className="mt-auto pt-3 border-t border-[#eee] flex items-center justify-between">
+                    <span className="text-xs px-2 py-1 rounded-md font-medium bg-yellow-100 text-yellow-700 capitalize">
+                      {event.registrationStatus}
+                    </span>
+                    <button
+                      onClick={() => navigate(`/events/${event._id}`)}
+                      className="text-xs px-3 py-1.5 rounded-md bg-emerald-500 hover:bg-emerald-400 text-white font-medium shadow-sm transition"
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </div>
               </div>
-            )}
+            ))}
           </div>
+        )}
         </main>
-        <Footer />
       </div>
-    </>
+      <Footer />
+    </div>
   );
 };
 

@@ -10,12 +10,6 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import EventDetails from "./Components/EventDetails";
-import {
-  VscHome,
-  VscArchive,
-  VscAccount,
-  VscSettingsGear,
-} from "react-icons/vsc";
 
 import CreateEvent from "./Components/CreateEvent";
 
@@ -37,6 +31,8 @@ import EventsPage from "./Components/EventsPage";
 import CreateHighlights from "./Components/CreateHighlights";
 import EventHighlightSingle from "./Components/EventHighlights";
 import LoadingPage from "./Components/LoadingPage";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   const navigate = useNavigate();
@@ -56,28 +52,6 @@ function App() {
       navigate("/");
     }
   }, [navigate]);
-  const items = [
-    {
-      icon: <VscHome size={18} />,
-      label: "Home",
-      onClick: () => alert("Home!"),
-    },
-    {
-      icon: <VscArchive size={18} />,
-      label: "Archive",
-      onClick: () => alert("Archive!"),
-    },
-    {
-      icon: <VscAccount size={18} />,
-      label: "Profile",
-      onClick: () => alert("Profile!"),
-    },
-    {
-      icon: <VscSettingsGear size={18} />,
-      label: "Settings",
-      onClick: () => alert("Settings!"),
-    },
-  ];
 
   return (
     <>
@@ -117,6 +91,19 @@ function App() {
         />
         <Route path="*" element={<LoadingPage />} />
       </Routes>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={3500}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnFocusLoss
+        pauseOnHover
+        theme="light"
+        toastClassName="!rounded-xl !text-sm !font-medium !shadow-lg !border !border-[#e5e5e5]"
+        progressClassName="!bg-emerald-500"
+      />
     </>
   );
 }

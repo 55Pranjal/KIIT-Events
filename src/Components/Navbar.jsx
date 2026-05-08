@@ -6,6 +6,7 @@ import axios from "axios";
 const Navbar = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // 🔹 Check login state and token validity
@@ -35,7 +36,7 @@ const Navbar = () => {
           `${import.meta.env.VITE_BACKEND_URL}/api/users/me`,
           {
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         );
         setUser(res.data);
       } catch (err) {
@@ -55,9 +56,34 @@ const Navbar = () => {
     };
   }, []);
 
+  // Fetch unread notification count whenever auth state changes.
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+    const fetchUnread = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const { data } = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/notifications`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (Array.isArray(data)) {
+          setUnreadCount(data.filter((n) => !n.isRead).length);
+        }
+      } catch {
+        /* silent — bell just stays at 0 */
+      }
+    };
+    fetchUnread();
+  }, [user]);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     setUser(null);
+    setUnreadCount(0);
     window.dispatchEvent(new Event("authChange"));
     window.dispatchEvent(new Event("storage"));
     navigate("/");
@@ -69,25 +95,28 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="border-b border-emerald-900/40 shadow-md w-full sticky top-0 z-50 bg-black/50 backdrop-blur-lg">
-      <div className="max-w-7xl mx-auto flex justify-between items-center py-3 px-4 sm:px-8 text-white">
+    <nav className="w-full sticky top-0 z-50 bg-white border-b border-[#e5e5e0] opacity-[95%] backdrop-blur-sm">
+      <div className="max-w-7xl mx-auto flex justify-between items-center py-3 px-4 sm:px-8">
         {/* Logo */}
         <div
           className="flex items-center gap-3 cursor-pointer"
           onClick={() => handleNavigation("/")}
         >
-          <img src="/logo.gif" alt="Logo" className="w-10 h-10 rounded-full" />
-          <p className="text-xl sm:text-2xl font-bold tracking-wide whitespace-nowrap">
-            KIIT <span className="text-emerald-400">Events</span>
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+            <img src="/KIIT-Logo-500x500-1.png" alt="" />
+          </div>
+
+          <p className="font-display text-xl sm:text-2xl font-bold text-[#1a1a1a] tracking-tightish whitespace-nowrap">
+            KIIT <span className="text-emerald-600">Events</span>
           </p>
         </div>
 
         {/* Desktop Nav Links */}
-        <ul className="hidden sm:flex gap-8 text-gray-200 text-[15px]">
+        <ul className="hidden sm:flex gap-8 text-[#4b5563] text-[15px] font-medium">
           <li>
             <button
               onClick={() => handleNavigation("/")}
-              className="hover:text-emerald-400 transition"
+              className="hover:text-emerald-600 transition"
             >
               Home
             </button>
@@ -95,7 +124,7 @@ const Navbar = () => {
           <li>
             <button
               onClick={() => handleNavigation("/About")}
-              className="hover:text-emerald-400 transition"
+              className="hover:text-emerald-600 transition"
             >
               About
             </button>
@@ -103,7 +132,7 @@ const Navbar = () => {
           <li>
             <button
               onClick={() => handleNavigation("/EventsPage")}
-              className="hover:text-emerald-400 transition"
+              className="hover:text-emerald-600 transition"
             >
               Events
             </button>
@@ -111,62 +140,113 @@ const Navbar = () => {
           <li>
             <button
               onClick={() => handleNavigation("/Contact")}
-              className="hover:text-emerald-400 transition"
+              className="hover:text-emerald-600 transition"
             >
               Contact
             </button>
           </li>
         </ul>
 
-        {/* Right Side Buttons */}
-        <div className="flex items-center gap-2 sm:gap-4">
+        {/* Right Side */}
+        <div className="flex items-center gap-2 sm:gap-3">
           {user ? (
             <>
-              <p className="hidden md:block font-semibold text-emerald-300 text-sm whitespace-nowrap">
-                Welcome, {user.name}
-              </p>
-
+              {/* Notifications — SVG bell with unread badge */}
               <button
                 onClick={() => handleNavigation("/Notifications")}
-                className="hidden sm:block text-xl hover:text-emerald-400 transition"
-                title="Notifications"
+                className="relative hidden sm:flex w-9 h-9 items-center justify-center rounded-full text-[#4b5563] hover:bg-emerald-50 hover:text-emerald-600 transition-all"
+                aria-label={
+                  unreadCount > 0
+                    ? `Notifications, ${unreadCount} unread`
+                    : "Notifications"
+                }
+                title={
+                  unreadCount > 0
+                    ? `${unreadCount} unread`
+                    : "Notifications"
+                }
               >
-                🔔
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-[18px] h-[18px]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                  <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                </svg>
+
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold leading-none flex items-center justify-center ring-2 ring-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
               </button>
 
+              {/* Avatar + first-name pill — also opens Dashboard */}
               <button
                 onClick={() => handleNavigation("/Dashboard")}
-                className="px-3 py-1 sm:px-4 sm:py-2 border border-emerald-700 rounded-lg text-xs font-semibold hover:bg-emerald-900/50 transition"
+                className="flex items-center gap-2 pl-1 pr-1 md:pr-3 py-1 rounded-full border border-[#e5e5e0] hover:bg-[#f7faf8] hover:border-emerald-200 transition-all"
+                title={`Dashboard — ${user.name}`}
+                aria-label={`Open dashboard, signed in as ${user.name}`}
               >
-                Dashboard
+                <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-white text-xs sm:text-sm font-bold">
+                  {user.name?.charAt(0).toUpperCase() || "?"}
+                </span>
+                <span className="hidden md:inline text-sm font-medium text-[#374151] max-w-[100px] truncate">
+                  {user.name?.split(" ")[0] || "Account"}
+                </span>
               </button>
+
+              {/* Log out */}
               <button
                 onClick={handleLogout}
-                className="px-3 py-1 sm:px-4 sm:py-2 border border-red-700 rounded-lg text-xs font-semibold hover:bg-red-800/50 transition"
+                className="px-3 sm:px-4 py-2 rounded-lg text-sm border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 transition"
+                aria-label="Log out"
+                title="Log out"
               >
-                Log out
+                <span className="hidden sm:inline">Log out</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-4 h-4 sm:hidden"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
               </button>
             </>
           ) : (
             <>
               <button
                 onClick={() => handleNavigation("/Login")}
-                className="px-3 py-1 sm:px-4 sm:py-2 border border-emerald-700 rounded-lg text-xs sm:text-sm font-semibold hover:bg-emerald-900/50 transition"
+                className="text-sm text-[#374151] hover:text-black transition"
               >
-                Login
+                Sign In
               </button>
+
               <button
                 onClick={() => handleNavigation("/SignUp")}
-                className="px-3 py-1 sm:px-4 sm:py-2 border border-emerald-700 rounded-lg text-xs sm:text-sm font-semibold hover:bg-emerald-900/50 transition"
+                className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-medium shadow-sm transition"
               >
-                Signup
+                Register
               </button>
             </>
           )}
 
-          {/* Hamburger Button */}
+          {/* Mobile Menu */}
           <button
-            className="text-2xl sm:hidden ml-2 focus:outline-none"
+            className="text-2xl sm:hidden ml-2 text-[#333]"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? "✖" : "☰"}
@@ -174,20 +254,33 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Dropdown Menu */}
+      {/* Mobile Dropdown */}
       <div
         className={`sm:hidden transition-all duration-300 ease-in-out overflow-hidden ${
           isMenuOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
-        } bg-emerald-950/60 backdrop-blur-md`}
+        } bg-[#f5f5f2] border-t border-[#e5e5e0]`}
       >
-        <ul className="flex flex-col items-center text-gray-200 py-3 space-y-3 text-[16px]">
+        <ul className="flex flex-col items-center text-[#444] py-3 space-y-3 text-[16px]">
           {user && (
             <li className="w-full text-center">
               <button
                 onClick={() => handleNavigation("/Notifications")}
-                className="flex justify-center items-center gap-2 py-2 hover:bg-emerald-900/40 w-full transition font-semibold"
+                className="flex justify-center items-center gap-2 py-2 hover:bg-[#ececec] w-full transition font-medium"
               >
-                <span className="text-xl">🔔</span> Notifications
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-[18px] h-[18px]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                  <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                </svg>
+                Notifications
               </button>
             </li>
           )}
@@ -200,11 +293,11 @@ const Navbar = () => {
                     item === "Home"
                       ? "/"
                       : item === "Events"
-                      ? "/EventsPage"
-                      : `/${item}`
+                        ? "/EventsPage"
+                        : `/${item}`,
                   )
                 }
-                className="block py-2 hover:bg-emerald-900/40 w-full transition"
+                className="block py-2 hover:bg-[#ececec] w-full transition"
               >
                 {item}
               </button>
@@ -213,10 +306,15 @@ const Navbar = () => {
         </ul>
 
         {user && (
-          <div className="border-t border-emerald-800 pt-3 text-center">
-            <p className="text-emerald-300 font-semibold text-sm">
-              Welcome, {user.name}
-            </p>
+          <div className="border-t border-[#e5e5e0] pt-3 pb-3 flex justify-center">
+            <div className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full bg-white border border-[#e5e5e0]">
+              <span className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-white text-xs font-bold">
+                {user.name?.charAt(0).toUpperCase() || "?"}
+              </span>
+              <span className="text-sm font-medium text-[#374151]">
+                {user.name}
+              </span>
+            </div>
           </div>
         )}
       </div>

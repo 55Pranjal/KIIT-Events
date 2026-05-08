@@ -305,9 +305,14 @@
 
 import React, { useEffect, useState } from "react";
 import Navbar from "./Navbar";
+import Footer from "./Footer";
+import Doodles from "./Doodles";
+import Spinner from "./Spinner";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import UploadPoster from "./UploadPoster"; // <-- imported
+import { optimizeCard } from "../utils/imageOptimization";
 
 const CreateEvent = () => {
   const [title, setTitle] = useState("");
@@ -321,7 +326,7 @@ const CreateEvent = () => {
   const [eventCategory, setEventCategory] = useState("");
   const [customCategory, setCustomCategory] = useState("");
   const [societyId, setSocietyId] = useState("");
-  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
   // societies from backend (normalized to { _id, name, raw })
@@ -439,16 +444,15 @@ const CreateEvent = () => {
     twoMonthsLater.setMonth(twoMonthsLater.getMonth() + 2);
 
     if (selectedDate <= today) {
-      setMessage("⚠️ Please select a future date for the event.");
+      toast.warn("Please select a future date for the event.");
       return false;
     }
 
     if (selectedDate > twoMonthsLater) {
-      setMessage("⚠️ Event date must be within the next 2 months.");
+      toast.warn("Event date must be within the next 2 months.");
       return false;
     }
 
-    setMessage("");
     return true;
   };
 
@@ -464,22 +468,23 @@ const CreateEvent = () => {
     twoMonthsLater.setMonth(twoMonthsLater.getMonth() + 2);
 
     if (selectedDate <= today) {
-      setMessage("⚠️ Please select a future date for the event.");
+      toast.warn("Please select a future date for the event.");
       return;
     }
     if (selectedDate > twoMonthsLater) {
-      setMessage("⚠️ Event date must be within the next 2 months.");
+      toast.warn("Event date must be within the next 2 months.");
       return;
     }
 
+    setSubmitting(true);
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        setMessage("You must be logged in as an admin to create an event");
+        toast.error("You must be logged in as an admin to create an event.");
         return;
       }
       if (!societyId) {
-        setMessage("Please select a society to associate this event with");
+        toast.warn("Please select a society to associate this event with.");
         return;
       }
 
@@ -493,13 +498,13 @@ const CreateEvent = () => {
         found
       );
       if (!found) {
-        setMessage("⚠️ Selected society not found in fetched societies.");
+        toast.error("Selected society not found in fetched societies.");
         return;
       }
 
       if (typeof coverImageURL !== "string" || coverImageURL.trim() === "") {
-        setMessage(
-          "⚠️ Please upload a poster or paste an image URL for the event."
+        toast.warn(
+          "Please upload a poster or paste an image URL for the event."
         );
         return;
       }
@@ -546,36 +551,12 @@ const CreateEvent = () => {
       const returnedSociety = returnedEvent?.societyId;
       if (!returnedSociety) {
         console.warn(
-          "[WARN] Created event does not include societyId in response. Server may not have saved it."
+          "[WARN] Created event does not include societyId in response."
         );
-        setMessage(
-          "Event created but server did not return associated society. Check server logs."
-        );
-      } else {
-        // if populated, it may be an object with ._id and .name, else it's likely a string id
-        const isPopulated =
-          typeof returnedSociety === "object" &&
-          (returnedSociety.name || returnedSociety._id);
-        console.info(
-          "[INFO] returned society in created event:",
-          returnedSociety,
-          "populated:",
-          !!isPopulated
-        );
-        if (!isPopulated) {
-          // it's probably an ObjectId string — that's okay, event is associated but not populated
-          setMessage(
-            res.data?.message || "Event created successfully! (societyId saved)"
-          );
-        } else {
-          setMessage(
-            res.data?.message ||
-              "Event created successfully and society populated!"
-          );
-        }
       }
 
       if (res.status === 201) {
+        toast.success(res.data?.message || "Event created successfully!");
         // reset
         setTitle("");
         setDate("");
@@ -594,24 +575,39 @@ const CreateEvent = () => {
       console.error("[ERROR] create event failed - axios error:", err);
       if (err.response) {
         console.error("[ERROR] server response:", err.response.data);
-        setMessage(
+        toast.error(
           err.response.data?.message || `Server returned ${err.response.status}`
         );
       } else {
-        setMessage(err.message || "Error creating event. Please try again.");
+        toast.error(err.message || "Error creating event. Please try again.");
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
+  const inputClass =
+    "rounded-lg p-3 w-full bg-white border border-[#e5e5e5] text-[#111] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all";
+  const selectClass =
+    "rounded-lg p-3 w-full bg-white border border-[#e5e5e5] text-[#111] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-[#001a0f] to-[#003319] text-white flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <div className="flex justify-center items-center flex-grow px-4 py-8">
-        <div className="bg-black/40 border border-green-900/30 backdrop-blur-md shadow-xl shadow-green-900/40 w-full max-w-2xl rounded-2xl py-8 px-6 sm:px-10">
-          <h1 className="text-center font-bold text-3xl mb-6 bg-gradient-to-r from-green-400 to-emerald-300 text-transparent bg-clip-text drop-shadow-md">
-            Create Your Event
+      <div className="relative flex-grow overflow-hidden flex flex-col">
+        <Doodles variant="hero" />
+        <div className="relative z-10 flex justify-center flex-grow px-4 py-10">
+          <div className="bg-white border border-[#e5e5e5] shadow-sm w-full max-w-2xl rounded-2xl py-8 px-6 sm:px-10">
+          <h1 className="font-display text-center font-bold text-3xl mb-2 text-[#111] tracking-tightish">
+            Create your{" "}
+            <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">
+              Event
+            </span>
           </h1>
+          <p className="text-center text-sm text-gray-500 mb-6">
+            Fill in the details below — date must be within the next 2 months.
+          </p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {[
@@ -656,7 +652,7 @@ const CreateEvent = () => {
                 required
                 value={input.value}
                 onChange={(e) => input.onChange(e.target.value)}
-                className="rounded-lg p-3 w-full bg-[#0d1b12] border border-green-700/40 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                className={inputClass}
               />
             ))}
 
@@ -665,14 +661,15 @@ const CreateEvent = () => {
               required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="rounded-lg p-3 bg-[#0d1b12] border border-green-700/40 w-full resize-none placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200"
+              rows={4}
+              className={`${inputClass} resize-none`}
             />
 
             <select
               required
               value={registrationStatus}
               onChange={(e) => setRegistrationStatus(e.target.value)}
-              className="rounded-lg p-3 bg-[#0d1b12] border border-green-700/40 text-gray-300 w-full focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200"
+              className={selectClass}
             >
               <option value="" disabled>
                 Registration Status
@@ -687,7 +684,7 @@ const CreateEvent = () => {
                 required
                 value={eventCategory}
                 onChange={(e) => setEventCategory(e.target.value)}
-                className="rounded-lg p-3 bg-[#0d1b12] border border-green-700/40 text-gray-300 w-full focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200"
+                className={selectClass}
               >
                 <option value="" disabled>
                   Event Category
@@ -704,19 +701,18 @@ const CreateEvent = () => {
                   placeholder="Enter custom category"
                   value={customCategory}
                   onChange={(e) => setCustomCategory(e.target.value)}
-                  className="mt-3 rounded-lg p-3 bg-[#0d1b12] border border-green-700/40 text-gray-300 w-full focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200"
+                  className={`${inputClass} mt-3`}
                   required
                 />
               )}
             </div>
 
-            {/* Society select (populated from backend) */}
             {loadingSocieties ? (
-              <div className="rounded-lg p-3 bg-[#0d1b12] border border-green-700/40 text-gray-300 w-full">
+              <div className="rounded-lg p-3 bg-[#f7faf8] border border-[#eeeeea] text-gray-500 w-full text-sm">
                 Loading societies...
               </div>
             ) : societiesError ? (
-              <div className="rounded-lg p-3 bg-[#1a0f12] border border-red-600/40 text-red-300 w-full">
+              <div className="rounded-lg p-3 bg-red-50 border border-red-200 text-red-600 w-full text-sm">
                 {societiesError}
               </div>
             ) : (
@@ -724,7 +720,7 @@ const CreateEvent = () => {
                 required
                 value={societyId}
                 onChange={(e) => setSocietyId(e.target.value)}
-                className="rounded-lg p-3 bg-[#0d1b12] border border-green-700/40 text-gray-300 w-full focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200"
+                className={selectClass}
               >
                 <option value="" disabled>
                   Select Society
@@ -737,9 +733,8 @@ const CreateEvent = () => {
               </select>
             )}
 
-            {/* Poster uploader + manual URL fall-back */}
             <div className="w-full mt-2">
-              <label className="block mb-2 text-sm text-green-200">
+              <label className="block mb-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Poster
               </label>
 
@@ -750,12 +745,12 @@ const CreateEvent = () => {
                     url
                   );
                   setCoverImageURL(url);
-                  setMessage("Poster uploaded successfully.");
+                  toast.success("Poster uploaded.");
                 }}
                 initialPreviewUrl={coverImageURL}
               />
 
-              <p className="text-xs text-green-200/60 mt-2 mb-1">
+              <p className="text-xs text-gray-400 mt-2 mb-1">
                 Or paste an image URL (optional) — this will be normalized on
                 submit.
               </p>
@@ -764,18 +759,19 @@ const CreateEvent = () => {
                 placeholder="Paste image URL (optional)"
                 value={coverImageURL}
                 onChange={(e) => setCoverImageURL(e.target.value)}
-                className="rounded-lg p-3 w-full bg-[#0d1b12] border border-green-700/40 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                className={inputClass}
               />
 
               {coverImageURL && (
                 <div className="mt-3 flex justify-center">
                   <img
-                    src={resolveImageUrl(coverImageURL)}
+                    src={optimizeCard(resolveImageUrl(coverImageURL))}
                     alt="poster preview"
+                    loading="lazy"
                     onError={(e) => {
-                      e.currentTarget.src = ""; // hide broken image
+                      e.currentTarget.src = "";
                     }}
-                    className="max-w-full max-h-48 rounded-lg object-cover border border-green-700/30"
+                    className="max-w-full max-h-48 rounded-lg object-cover border border-[#e5e5e5]"
                   />
                 </div>
               )}
@@ -783,30 +779,18 @@ const CreateEvent = () => {
 
             <button
               type="submit"
-              className="mt-2 font-semibold bg-gradient-to-r from-green-700 to-emerald-600 text-white rounded-  lg py-2.5 w-full sm:w-1/2 mx-auto hover:scale-[1.02] hover:shadow-[0_0_10px_#00ff88aa] transition-all duration-300"
+              disabled={submitting}
+              className="mt-3 font-semibold bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 disabled:bg-emerald-300 disabled:cursor-not-allowed text-white rounded-lg py-3 w-full sm:w-1/2 mx-auto shadow-sm transition-all flex items-center justify-center gap-2"
             >
-              Create Event
+              {submitting && <Spinner className="w-4 h-4" />}
+              {submitting ? "Creating…" : "Create Event"}
             </button>
-
-            {message && (
-              <p className="text-center mt-3 text-sm text-green-300">
-                {message}
-              </p>
-            )}
           </form>
+        </div>
         </div>
       </div>
 
-      <footer className="w-full mt-12 bg-gradient-to-r from-black via-[#0f2e1f] to-[#003300] border-t border-green-800/30 text-green-300 py-4 px-6 text-center">
-        <p className="text-sm tracking-wide">
-          © {new Date().getFullYear()}{" "}
-          <span className="font-semibold text-green-400">KIIT Events</span>. All
-          rights reserved.
-        </p>
-        <p className="text-xs text-green-200/70 mt-1">
-          Built by a fellow KIITIAN (Pranjal Agarwal).
-        </p>
-      </footer>
+      <Footer />
     </div>
   );
 };

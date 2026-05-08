@@ -1,53 +1,36 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { optimizeCard } from "../utils/imageOptimization";
+import { formatEventDateTime } from "../utils/formatDate";
+import Doodles from "./Doodles";
 
 const MainSection = () => {
   const navigate = useNavigate();
 
-  const [user, setUser] = useState(null);
   const [events, setEvents] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSociety, setSelectedSociety] = useState("All");
-  const [showAllSocieties, setShowAllSocieties] = useState(false);
 
   // societies come exclusively from backend (users with role === "society")
   const [societyAccounts, setSocietyAccounts] = useState([]); // [{ _id, name }]
-  const [loadingSocietyAccounts, setLoadingSocietyAccounts] = useState(false);
-  const [societyAccountsError, setSocietyAccountsError] = useState("");
+  const [showSocietyDropdown, setShowSocietyDropdown] = useState(false);
 
   const BACKEND = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
 
-  // fetch current user
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setUser(null);
-          return;
-        }
-        const res = await axios.get(`${BACKEND}/api/users/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(res.data);
-      } catch (err) {
-        console.error("[USER FETCH ERROR]", err?.response?.data || err.message);
-        setUser(null);
+    const handleClickOutside = (e) => {
+      if (!e.target.closest("[data-dropdown]")) {
+        setShowSocietyDropdown(false);
       }
     };
-    fetchUser();
-
-    const handleStorageChange = () => fetchUser();
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, [BACKEND]);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
 
   // fetch society accounts (no hardcoded fallback)
   useEffect(() => {
     const fetchSocietyAccounts = async () => {
-      setLoadingSocietyAccounts(true);
-      setSocietyAccountsError("");
       try {
         const token = localStorage.getItem("token");
         const config = token
@@ -67,9 +50,6 @@ const MainSection = () => {
           err?.response?.data || err.message,
         );
         setSocietyAccounts([]);
-        setSocietyAccountsError("Failed to load societies.");
-      } finally {
-        setLoadingSocietyAccounts(false);
       }
     };
 
@@ -117,166 +97,254 @@ const MainSection = () => {
   });
 
   return (
-    <div className="rounded-2xl mt-8 mx-4 md:mx-8 lg:mx-20 xl:mx-32">
-      <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white text-left">
-        Find your next event
-      </h2>
+    <div>
+      {/* HERO SECTION */}
+      <div className="relative text-center min-h-[70vh] flex flex-col justify-center items-center px-4 md:px-8 lg:px-16 bg-[#fffffb] overflow-hidden">
+        {/* dot-grid texture */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle, #c2e0ce 1px, transparent 1px)",
+            backgroundSize: "30px 30px",
+            opacity: 0.4,
+          }}
+        />
 
-      {/* Search + Admin Buttons */}
-      <div className="flex flex-col md:flex-row justify-between md:items-start">
-        <div className="flex mt-2 items-center bg-gradient-to-r from-black/80 to-green-950/40 border border-green-800 rounded-xl p-3 w-full lg:w-[70%] mb-6">
-          <input
-            type="text"
-            placeholder="Find events near you..."
-            className="bg-transparent outline-none text-green-300 w-full placeholder-gray-400"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+        {/* doodle layer */}
+        <Doodles variant="hero" />
 
-        <div className="flex flex-col-reverse mt-4 md:flex-row md:ml-4 mb-4 md:mb-0 space-y-2 md:space-y-0 md:space-x-2">
-          {user && user.role === "admin" && (
-            <>
-              <button
-                onClick={() => navigate("/CreateEvent")}
-                className="w-full md:w-auto text-green-700 border border-green-700 rounded-lg px-4 py-2"
+        {/* ── Content ── */}
+        <div className="relative z-10 w-full flex flex-col items-center">
+          <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold text-[#111] leading-[1.05] max-w-4xl tracking-tightish">
+            <span className="inline-block">
+              Discover{" "}
+              <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">
+                Unforgettable
+              </span>
+            </span>
+            <br className="hidden sm:block" />
+            <span className="inline-block">Experiences</span>
+          </h1>
+
+          <p className="text-gray-500 mt-6 max-w-2xl text-base md:text-lg">
+            From coding hackathons to musical nights, find everything happening
+            around campus in one place.
+          </p>
+
+          <div className="mt-10 w-full flex justify-center px-2 sm:px-0">
+            <div className="w-full max-w-3xl bg-white border border-[#e5e5e5] rounded-xl shadow-2xl px-2.5 sm:px-4 py-2 sm:py-3 flex items-center gap-1.5 sm:gap-2">
+              {/* search icon */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="text-gray-400 flex-shrink-0 ml-1 w-5 h-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                Create Event
-              </button>
-              <button
-                onClick={() => navigate("/CreateAnnouncements")}
-                className="w-full md:w-auto text-green-700 border border-green-700 rounded-lg px-4 py-2"
-              >
-                Create Announcement
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
 
-      {/* Society Filters (data comes only from backend) */}
-      <div className="w-full mt-6 border-b border-green-900/50 pb-4">
-        <div className="flex flex-wrap gap-2 md:gap-3 justify-start">
-          {loadingSocietyAccounts ? (
-            <div className="text-xs text-gray-300 px-2 py-1">
-              Loading societies…
-            </div>
-          ) : societyAccountsError ? (
-            <div className="text-xs text-red-400 px-2 py-1">
-              {societyAccountsError}
-            </div>
-          ) : societies.length > 0 ? (
-            (showAllSocieties ? societies : societies.slice(0, 6)).map(
-              (soc) => (
+              <input
+                type="text"
+                placeholder="Search events..."
+                className="flex-1 min-w-0 outline-none text-[#111] placeholder-gray-400 text-sm md:text-base bg-transparent py-1"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+
+              <div className="hidden sm:block w-px h-6 bg-gray-200 flex-shrink-0" />
+
+              <div className="relative flex-shrink-0" data-dropdown>
                 <button
-                  key={soc}
-                  onClick={() => setSelectedSociety(soc)}
-                  className={`px-3 py-1 md:px-4 md:py-2 rounded-lg font-medium text-xs sm:text-sm border whitespace-nowrap ${
-                    selectedSociety === soc
-                      ? "bg-gradient-to-r from-green-800 to-green-900 text-green-300 border-green-700"
-                      : "bg-black/40 text-gray-300 border-green-900"
+                  onClick={() => setShowSocietyDropdown(!showSocietyDropdown)}
+                  aria-label="Filter by society"
+                  className={`relative flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                    selectedSociety !== "All"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "text-gray-500 border-transparent hover:bg-gray-50 hover:border-gray-200"
                   }`}
                 >
-                  {soc}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-4 h-4 flex-shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                  </svg>
+                  <span className="hidden sm:inline max-w-[110px] truncate">
+                    {selectedSociety !== "All" ? selectedSociety : "Filter"}
+                  </span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className={`hidden sm:block w-3.5 h-3.5 transition-transform duration-200 flex-shrink-0 ${showSocietyDropdown ? "rotate-180" : ""}`}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                  {selectedSociety !== "All" && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white" />
+                  )}
                 </button>
-              ),
-            )
-          ) : (
-            <div className="text-xs text-gray-400 px-2 py-1">
-              No societies available.
-            </div>
-          )}
 
-          {societies.length > 6 && (
-            <button
-              onClick={() => setShowAllSocieties(!showAllSocieties)}
-              className="px-3 py-1 md:px-4 md:py-2 rounded-lg font-medium text-xs sm:text-sm border border-green-800 text-green-300"
-            >
-              {showAllSocieties ? "Show Less ▲" : "Show More ▼"}
-            </button>
-          )}
+                {showSocietyDropdown && (
+                  <>
+                    {/* Mobile-only backdrop dim — tap to dismiss */}
+                    <button
+                      type="button"
+                      onClick={() => setShowSocietyDropdown(false)}
+                      aria-label="Close filter"
+                      className="sm:hidden fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px]"
+                    />
+
+                    <div className="absolute right-0 top-full mt-2 z-50 w-[min(20rem,calc(100vw-1.5rem))] sm:w-60 bg-white border border-[#e5e5e5] rounded-2xl shadow-2xl overflow-hidden animate-fadeUp">
+                      <div className="px-4 py-3 border-b border-[#f0f0f0] flex items-center justify-between">
+                        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                          Filter by society
+                        </span>
+                        {selectedSociety !== "All" && (
+                          <button
+                            onClick={() => {
+                              setSelectedSociety("All");
+                              setShowSocietyDropdown(false);
+                            }}
+                            className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                      <div className="max-h-[60vh] sm:max-h-72 overflow-y-auto p-1.5">
+                        {societies.map((soc) => {
+                          const isActive = selectedSociety === soc;
+                          return (
+                            <button
+                              key={soc}
+                              onClick={() => {
+                                setSelectedSociety(soc);
+                                setShowSocietyDropdown(false);
+                              }}
+                              className={`w-full text-left px-3 py-3 sm:py-2.5 text-sm rounded-lg transition-all flex items-center justify-between gap-2 ${
+                                isActive
+                                  ? "bg-emerald-50 text-emerald-700 font-semibold"
+                                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 active:bg-gray-100"
+                              }`}
+                            >
+                              <span className="truncate">{soc}</span>
+                              {isActive && (
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="w-4 h-4 text-emerald-500 flex-shrink-0"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Event List */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-10">
-        <p className="text-white text-left font-bold text-3xl sm:text-4xl">
-          {selectedSociety === "All"
-            ? "All Events"
-            : `${selectedSociety} Events`}
-        </p>
-        {/* <div>
-          <button
-            onClick={() => navigate("/Upcoming")}
-            className="mr-2 text-white px-6 py-2 rounded-lg border border-white hover:bg-white/10"
-          >
-            View Upcoming Events
-          </button>
-          <button
-            onClick={() => navigate("/PastEvents")}
-            className="text-white px-6 py-2 rounded-lg border border-white hover:bg-white/10"
-          >
-            View Past Events
-          </button>
-        </div> */}
-      </div>
+      <div className="border border-1 border-black/5"></div>
 
-      {/* Event Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-8">
-        {filteredEvents.length > 0 ? (
-          filteredEvents.map((event) => (
+      {/* EVENTS SECTION */}
+      <div className="mt-12 px-4 md:px-8 lg:px-16 xl:px-24">
+        {/* Section Heading */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="font-display text-xl md:text-2xl font-semibold text-[#111]">
+              Featured Events
+            </h2>
+            <p className="text-sm text-gray-500">
+              Hand-picked experiences for you this week.
+            </p>
+          </div>
+        </div>
+
+        {/* Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {filteredEvents.map((event) => (
             <div
               key={event._id}
-              className="bg-black/50 border border-green-800 rounded-xl p-4 flex flex-col"
+              className="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden 
+             transition-all duration-300 ease-out 
+             hover:shadow-xl hover:-translate-y-1 hover:scale-[1.02] 
+             flex flex-col group"
             >
-              {event.coverImageURL && (
-                <img
-                  src={event.coverImageURL.replace(
-                    "/upload/",
-                    "/upload/w_400,h_250,c_fill,q_auto,f_auto/",
-                  )}
-                  alt={event.title}
-                  loading="lazy"
-                  className="w-full h-40 object-cover"
-                />
-              )}
-              <h3 className="text-lg font-bold text-green-300 line-clamp-2">
-                {event.title}
-              </h3>
-              <p className="text-sm text-gray-400 italic mb-2 line-clamp-1">
-                {event.societyId?.name}
-              </p>
-              <p className="text-gray-200 text-sm mb-1">
-                📅 {event.date} • {event.time}
-              </p>
-              <p className="text-gray-200 text-sm mb-4">📍 {event.location}</p>
+              <img
+                src={optimizeCard(event.coverImageURL)}
+                alt={event.title}
+                loading="lazy"
+                className="w-full h-40 object-cover bg-gray-200"
+              />
 
-              <div className="flex justify-between items-center mt-auto pt-2 border-t border-green-900/50">
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                    event.registrationStatus === "closed"
-                      ? "bg-red-500/20 border-red-500 text-red-300"
-                      : event.registrationStatus === "upcoming"
-                        ? "bg-yellow-500/20 border-yellow-500 text-yellow-300"
-                        : "bg-green-500/20 border-green-500 text-green-300"
-                  }`}
-                >
-                  {event.registrationStatus}
-                </span>
-                <button
-                  onClick={() => navigate(`/events/${event._id}`)}
-                  className="font-semibold text-xs bg-gradient-to-r from-green-700 to-green-900 text-white rounded-md px-3 py-1"
-                >
-                  View Details
-                </button>
+              <div className="p-4 flex flex-col flex-1">
+                <h3 className="text-[#111] font-semibold text-sm line-clamp-2 group-hover:text-emerald-600 transition">
+                  {event.title}
+                </h3>
+                <p className="text-gray-500 text-xs mt-1">
+                  {event.societyId?.name}
+                </p>
+
+                <p className="text-gray-400 text-xs mt-2">
+                  {formatEventDateTime(event.date, event.time)}
+                </p>
+
+                <p className="text-gray-400 text-xs mb-3">{event.location}</p>
+
+                {/* ✅ FIXED BOTTOM SECTION */}
+                <div className="flex justify-between items-center mt-auto pt-3 border-t border-[#eee]">
+                  <span
+                    className={`text-xs px-2 py-1 rounded-md font-medium ${
+                      event.registrationStatus === "closed"
+                        ? "bg-red-100 text-red-600"
+                        : event.registrationStatus === "upcoming"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-emerald-100 text-emerald-600"
+                    }`}
+                  >
+                    {event.registrationStatus}
+                  </span>
+
+                  <button
+                    onClick={() => navigate(`/events/${event._id}`)}
+                    className="text-xs px-3 py-1.5 rounded-md bg-emerald-500 hover:bg-emerald-400 text-white font-medium shadow-sm transition"
+                  >
+                    View Details
+                  </button>
+                </div>
               </div>
             </div>
-          ))
-        ) : (
-          <p className="col-span-full text-center text-gray-400 mt-6">
-            No events found.
-          </p>
-        )}
+          ))}
+        </div>
       </div>
     </div>
   );

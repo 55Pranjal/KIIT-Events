@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import Doodles from "./Doodles";
 
 export default function AnnouncementsList() {
   const [announcements, setAnnouncements] = useState([]);
@@ -37,52 +38,66 @@ export default function AnnouncementsList() {
     <>
       <Navbar />
 
-      <div className="flex flex-col min-h-screen text-white">
-        <main className="flex-grow max-w-4xl mx-auto w-full px-4 py-10">
-          <div className="bg-black/40 border border-green-900/30 backdrop-blur-md shadow-xl shadow-green-900/40 rounded-2xl p-8 z-0">
-            <h1 className="text-center text-3xl font-extrabold mb-6 bg-gradient-to-r from-green-400 to-emerald-300 text-transparent bg-clip-text drop-shadow-md">
-              Announcements
+      <div className="flex flex-col min-h-screen">
+        <div className="relative flex-grow overflow-hidden flex flex-col">
+          <Doodles variant="hero" />
+          <main className="relative z-10 flex-grow max-w-4xl mx-auto w-full px-4 sm:px-6 py-10">
+          <div className="mb-8 pt-2">
+            <h1 className="font-display text-3xl md:text-4xl font-bold text-[#111] tracking-tightish">
+              <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">
+                Announcements
+              </span>
             </h1>
-
-            {loading && (
-              <p className="text-center text-gray-400 animate-pulse">
-                Loading announcements...
-              </p>
-            )}
-            {error && (
-              <p className="text-center text-red-400 font-medium">{error}</p>
-            )}
-            {!loading && !error && announcements.length === 0 && (
-              <p className="text-center text-gray-400">
-                No announcements available.
-              </p>
-            )}
-
-            <div className="flex flex-col gap-5 mt-4">
-              {announcements.map((a) => (
-                <div
-                  key={a._id}
-                  className="p-5 rounded-xl bg-[#0d1b12] border border-green-800/40 shadow-sm hover:shadow-[0_0_10px_#00ff88aa] transition-all duration-300 hover:scale-[1.01]"
-                >
-                  <h3 className="font-semibold text-xl mb-1 text-green-300">
-                    {a.title}
-                  </h3>
-                  <p className="text-gray-200 mb-2">{a.message}</p>
-                  <small className="text-gray-400 italic">
-                    Posted by{" "}
-                    <span className="text-green-400">
-                      {a.author?.name || "Unknown"}
-                    </span>{" "}
-                    ({a.author?.source || a.authorRole || "unknown"}) on{" "}
-                    <span className="text-emerald-400">
-                      {new Date(a.createdAt).toLocaleString()}
-                    </span>
-                  </small>
-                </div>
-              ))}
-            </div>
+            <p className="text-sm text-gray-500 mt-1">
+              The latest updates from societies across campus.
+            </p>
           </div>
-        </main>
+
+          {loading && (
+            <p className="text-center text-gray-500 py-8 animate-pulse">
+              Loading announcements...
+            </p>
+          )}
+          {error && (
+            <p className="text-center text-red-500 font-medium py-8">{error}</p>
+          )}
+          {!loading && !error && announcements.length === 0 && (
+            <div className="bg-white border border-dashed border-[#e5e5e5] rounded-xl p-10 text-center">
+              <p className="text-gray-500">No announcements available.</p>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-4">
+            {announcements.map((a) => (
+              <div
+                key={a._id}
+                className="p-5 sm:p-6 rounded-xl bg-white border border-[#e5e5e5] shadow-sm hover:shadow-md transition-all"
+              >
+                <h3 className="font-semibold text-lg sm:text-xl text-[#111] mb-1.5">
+                  {a.title}
+                </h3>
+                <p className="text-gray-600 text-sm sm:text-base mb-3 leading-relaxed">
+                  {a.message}
+                </p>
+                <div className="text-xs text-gray-400 flex flex-wrap gap-x-3 gap-y-1 pt-3 border-t border-[#eee]">
+                  <span>
+                    Posted by{" "}
+                    <span className="text-emerald-600 font-medium">
+                      {a.author?.name || "Unknown"}
+                    </span>
+                  </span>
+                  <span>
+                    ({a.author?.source || a.authorRole || "unknown"})
+                  </span>
+                  <span className="text-gray-500">
+                    {new Date(a.createdAt).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          </main>
+        </div>
         <Footer />
       </div>
     </>

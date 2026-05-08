@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import { optimizeCard } from "../utils/imageOptimization";
+import { formatEventDateTime } from "../utils/formatDate";
+import Doodles from "./Doodles";
 
 export default function PastEvents() {
   const [events, setEvents] = useState([]);
@@ -25,86 +28,93 @@ export default function PastEvents() {
   }, []);
 
   if (loading)
-    return <p className="text-white text-center mt-10 text-lg">Loading...</p>;
+    return (
+      <>
+        <Navbar />
+        <p className="text-gray-500 text-center mt-10">Loading...</p>
+      </>
+    );
 
   return (
     <>
-      {/* Navbar */}
       <Navbar />
-      <div className="min-h-screen flex flex-col bg-gradient-to-r from-black/80 to-green-950/40 text-gray-200">
-        {/* Page Content */}
-        <div className="flex-grow max-w-6xl mx-auto px-6 py-12">
-          {/* Page Heading */}
-          <h1 className="text-4xl md:text-5xl font-bold text-green-400 text-center mb-8">
-            Past Events
-          </h1>
 
-          {/* Subtext */}
-          <p className="text-center text-gray-300 max-w-2xl mx-auto text-lg leading-relaxed mb-10">
-            Explore all previously held events across KIIT. Relive the
-            experiences, memories, and highlights of what made each event
-            special.
-          </p>
+      <div className="min-h-screen flex flex-col">
+        <div className="relative flex-grow overflow-hidden flex flex-col">
+          <Doodles variant="hero" />
+          <div className="relative z-10 flex-grow max-w-6xl mx-auto w-full px-4 sm:px-6 py-12">
+            <div className="text-center mb-10 pt-2">
+              <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-[#111] tracking-tightish">
+                Past{" "}
+                <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">
+                  Events
+                </span>
+              </h1>
+              <p className="text-gray-500 max-w-2xl mx-auto mt-3 text-sm md:text-base leading-relaxed">
+                Explore previously held events across campus. Relive the
+                experiences, memories, and highlights of what made each event
+                special.
+              </p>
+            </div>
 
-          {/* No Events */}
           {events.length === 0 ? (
-            <p className="text-center text-2xl font-semibold text-gray-400 mt-20">
-              No past events available.
-            </p>
+            <div className="bg-white border border-dashed border-[#e5e5e5] rounded-2xl p-12 text-center">
+              <p className="text-xl font-semibold text-[#111] mb-1">
+                No past events yet.
+              </p>
+              <p className="text-gray-500">Check back soon for highlights.</p>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {events.map((event) => (
                 <div
                   key={event._id}
-                  className="
-                  bg-black/40 
-                  border border-gray-700 
-                  rounded-xl 
-                  p-5 
-                  hover:border-green-500 
-                  hover:shadow-[0_0_15px_rgba(0,255,80,0.2)]
-                  transition-all
-                "
+                  className="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden flex flex-col transition-all duration-300 ease-out hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01] group"
                 >
-                  {/* Image */}
                   {event.coverImageURL && (
                     <img
-                      src={event.coverImageURL}
+                      src={optimizeCard(event.coverImageURL)}
                       alt={event.title}
-                      className="w-full h-44 object-cover rounded-lg mb-4 border border-green-700/40"
+                      loading="lazy"
+                      className="w-full h-44 object-cover bg-gray-100"
                     />
                   )}
 
-                  {/* Title */}
-                  <h2 className="text-xl font-bold text-green-300 mb-2">
-                    {event.title}
-                  </h2>
+                  <div className="p-5 flex flex-col flex-1">
+                    <h2 className="text-lg font-semibold text-[#111] group-hover:text-emerald-600 transition line-clamp-2">
+                      {event.title}
+                    </h2>
 
-                  {/* Description */}
-                  <p className="text-gray-300 text-sm leading-relaxed mb-3 line-clamp-3">
-                    {event.description}
-                  </p>
-
-                  {/* Event Meta */}
-                  <div className="text-gray-400 text-sm space-y-1">
-                    <p>
-                      📅 {event.date} at {event.time}
-                    </p>
-                    <p>📍 {event.location}</p>
-                    <p>📂 {event.eventCategory}</p>
-                    {event.societyId && (
-                      <p className="text-green-400 font-semibold">
-                        Organised by: {event.societyId.name}
+                    {event.description && (
+                      <p className="text-gray-500 text-sm mt-1 line-clamp-3 leading-relaxed">
+                        {event.description}
                       </p>
+                    )}
+
+                    <div className="text-gray-400 text-xs mt-3 space-y-0.5">
+                      <p>{formatEventDateTime(event.date, event.time)}</p>
+                      <p>{event.location}</p>
+                      <p>{event.eventCategory}</p>
+                    </div>
+
+                    {event.societyId && (
+                      <div className="mt-3 pt-3 border-t border-[#eee]">
+                        <p className="text-xs text-gray-400">
+                          Organised by{" "}
+                          <span className="text-emerald-600 font-medium">
+                            {event.societyId.name}
+                          </span>
+                        </p>
+                      </div>
                     )}
                   </div>
                 </div>
               ))}
             </div>
           )}
+          </div>
         </div>
 
-        {/* Footer — FIXED at bottom */}
         <Footer />
       </div>
     </>

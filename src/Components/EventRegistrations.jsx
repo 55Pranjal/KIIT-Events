@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import Doodles from "./Doodles";
 
 const EventRegistrations = () => {
   const { eventId } = useParams();
@@ -28,18 +29,8 @@ const EventRegistrations = () => {
         );
 
         setRegistrations(res.data);
-
-        if (import.meta.env.MODE === "development") {
-          console.log("✅ Registrations fetched successfully:", res.data);
-        }
       } catch (err) {
-        if (import.meta.env.MODE === "development") {
-          console.error("❌ Fetch error:", {
-            status: err.response?.status,
-            data: err.response?.data,
-            message: err.message,
-          });
-        }
+        console.error("Fetch error:", err);
         setError("Failed to fetch registrations");
       } finally {
         setLoading(false);
@@ -55,49 +46,74 @@ const EventRegistrations = () => {
 
   if (loading)
     return (
-      <p className="text-green-300 text-center mt-10 animate-pulse">
-        Loading...
-      </p>
+      <>
+        <Navbar />
+        <p className="text-gray-500 text-center mt-10 animate-pulse">
+          Loading...
+        </p>
+      </>
     );
 
-  if (error) return <p className="text-red-500 text-center mt-10">{error}</p>;
+  if (error)
+    return (
+      <>
+        <Navbar />
+        <p className="text-red-500 text-center mt-10">{error}</p>
+      </>
+    );
 
   return (
     <>
       <Navbar />
-      <div className="min-h-screen px-6 py-8 text-green-200">
-        <h1 className="text-3xl font-bold mb-6 text-green-400 text-center sm:text-left">
-          Registered Students
-        </h1>
 
-        <div className="flex justify-center sm:justify-start mb-6">
+      <div className="relative overflow-hidden flex flex-col">
+        <Doodles variant="hero" />
+        <div className="relative z-10 min-h-[80vh] max-w-4xl mx-auto w-full px-4 sm:px-6 py-10">
+        <div className="mb-6">
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#111] tracking-tightish">
+            Registered{" "}
+            <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">
+              Students
+            </span>
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {registrations.length}{" "}
+            {registrations.length === 1 ? "student" : "students"} registered.
+          </p>
+        </div>
+
+        <div className="mb-6">
           <input
             type="text"
-            placeholder="Search by name"
+            placeholder="Search by name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full sm:w-1/2 px-4 py-2 rounded-lg bg-[#10291b] border border-green-700/40 text-green-200 placeholder-green-400/60 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200 mx-auto"
+            className="w-full sm:w-1/2 px-4 py-2.5 rounded-lg bg-white border border-[#e5e5e5] text-[#111] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
           />
         </div>
 
         {filtered.length === 0 ? (
-          <p className="text-green-300/80 text-center sm:text-left">
-            No students found.
-          </p>
+          <div className="bg-white border border-dashed border-[#e5e5e5] rounded-xl p-10 text-center">
+            <p className="text-gray-500">No students found.</p>
+          </div>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-2.5">
             {filtered.map((reg) => (
               <li
                 key={reg._id}
-                className="bg-[#0e1e14]/60 hover:bg-[#133422]/70 transition-all p-4 rounded-lg border border-green-800/40 shadow-sm hover:shadow-green-800/30"
+                className="bg-white border border-[#e5e5e5] hover:border-emerald-200 hover:shadow-md transition-all p-4 rounded-lg"
               >
-                <p className="text-green-300 font-medium">{reg.userId.name}</p>
-                <p className="text-green-400/80 text-sm">{reg.userId.email}</p>
+                <p className="text-[#111] font-medium">{reg.userId.name}</p>
+                <p className="text-gray-500 text-sm mt-0.5">
+                  {reg.userId.email}
+                </p>
               </li>
             ))}
           </ul>
         )}
+        </div>
       </div>
+
       <Footer />
     </>
   );

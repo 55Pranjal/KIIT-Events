@@ -3,6 +3,9 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import Doodles from "./Doodles";
+import { optimizeHero } from "../utils/imageOptimization";
+import { formatEventDate, formatEventTime } from "../utils/formatDate";
 
 const EventDetails = () => {
   const { id } = useParams();
@@ -18,10 +21,6 @@ const EventDetails = () => {
         );
         setEvent(res.data);
 
-        if (import.meta.env.MODE === "development") {
-          console.log("✅ Event fetched successfully:", res.data);
-        }
-
         const token = localStorage.getItem("token");
         if (token) {
           const regRes = await axios.get(
@@ -32,19 +31,9 @@ const EventDetails = () => {
           );
           const already = regRes.data.some((r) => r.eventId._id === id);
           setRegistered(already);
-
-          if (import.meta.env.MODE === "development") {
-            console.log(
-              already
-                ? "ℹ️ User is already registered for this event."
-                : "ℹ️ User is not registered yet."
-            );
-          }
         }
       } catch (err) {
-        if (import.meta.env.MODE === "development") {
-          console.error("❌ Error fetching event or registration:", err);
-        }
+        console.error("Error fetching event or registration:", err);
       } finally {
         setLoading(false);
       }
@@ -65,77 +54,113 @@ const EventDetails = () => {
       );
       alert(res.data.message);
       setRegistered(true);
-
-      if (import.meta.env.MODE === "development") {
-        console.log("✅ Registration successful:", res.data);
-      }
     } catch (err) {
-      if (import.meta.env.MODE === "development") {
-        console.error("❌ Registration failed:", err);
-      }
+      console.error("Registration failed:", err);
       alert(err.response?.data?.message || "Something went wrong");
     }
   };
 
   if (loading)
-    return <p className="text-center mt-10 text-gray-300">Loading...</p>;
+    return (
+      <>
+        <Navbar />
+        <p className="text-center mt-10 text-gray-500">Loading...</p>
+      </>
+    );
   if (!event)
-    return <p className="text-center mt-10 text-gray-300">Event not found</p>;
+    return (
+      <>
+        <Navbar />
+        <p className="text-center mt-10 text-gray-500">Event not found</p>
+      </>
+    );
+
+  const statusStyles = {
+    open: "bg-emerald-100 text-emerald-700",
+    upcoming: "bg-yellow-100 text-yellow-700",
+    closed: "bg-red-100 text-red-600",
+  };
 
   return (
     <>
       <Navbar />
-      <div className="min-h-screen text-gray-200 px-4 sm:px-6 lg:px-8 py-10">
-        <div className="max-w-4xl w-full mx-auto bg-emerald-950 rounded-2xl shadow-2xl border border-green-800/30 overflow-hidden backdrop-blur-lg">
-          <img
-            src={event.coverImageURL}
-            alt={event.title}
-            className="w-full h-48 sm:h-64 md:h-80 object-cover"
-          />
 
-          <div className="p-5 sm:p-8 flex flex-col gap-4">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-400 tracking-tight text-center sm:text-left">
-              {event.title}
-            </h1>
+      <div className="relative min-h-screen overflow-hidden">
+        <Doodles variant="hero" />
+        <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-10">
+          <div className="max-w-4xl w-full mx-auto bg-white border border-[#e5e5e5] rounded-2xl shadow-sm overflow-hidden">
+          {event.coverImageURL && (
+            <img
+              src={optimizeHero(event.coverImageURL)}
+              alt={event.title}
+              loading="eager"
+              className="w-full h-56 sm:h-72 md:h-80 object-cover bg-gray-100"
+            />
+          )}
 
-            <p className="text-gray-300 text-sm sm:text-base leading-relaxed text-justify">
+          <div className="p-6 sm:p-8 flex flex-col gap-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-[#111] tracking-tightish">
+                {event.title}
+              </h1>
+              <span
+                className={`px-3 py-1 rounded-md text-xs font-medium capitalize ${
+                  statusStyles[event.registrationStatus] ||
+                  "bg-gray-100 text-gray-600"
+                }`}
+              >
+                {event.registrationStatus}
+              </span>
+            </div>
+
+            <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
               {event.description}
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 text-gray-400 text-sm sm:text-base">
-              <p>
-                📅{" "}
-                <span className="font-medium text-green-300">{event.date}</span>{" "}
-                at{" "}
-                <span className="font-medium text-green-300">{event.time}</span>
-              </p>
-              <p>📍 {event.location}</p>
-              <p>🎤 Guest: {event.guest}</p>
-              <p>📂 Category: {event.eventCategory}</p>
-              <p className="sm:col-span-2">
-                🟢 Status:{" "}
-                <span
-                  className={`font-semibold ${
-                    event.registrationStatus === "open"
-                      ? "text-green-400"
-                      : event.registrationStatus === "upcoming"
-                      ? "text-yellow-400"
-                      : "text-red-500"
-                  }`}
-                >
-                  {event.registrationStatus}
-                </span>
-              </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 mt-2 text-sm">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-0.5">
+                  When
+                </p>
+                <p className="text-[#111] font-medium">
+                  {formatEventDate(event.date)}
+                  {event.time ? ` at ${formatEventTime(event.time)}` : ""}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-0.5">
+                  Location
+                </p>
+                <p className="text-[#111] font-medium">{event.location}</p>
+              </div>
+              {event.guest && (
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-0.5">
+                    Guest
+                  </p>
+                  <p className="text-[#111] font-medium">{event.guest}</p>
+                </div>
+              )}
+              {event.eventCategory && (
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-0.5">
+                    Category
+                  </p>
+                  <p className="text-[#111] font-medium">
+                    {event.eventCategory}
+                  </p>
+                </div>
+              )}
             </div>
 
-            <div className="flex justify-center sm:justify-start">
+            <div className="pt-4 border-t border-[#eee]">
               <button
                 onClick={handleRegister}
                 disabled={event.registrationStatus !== "open" || registered}
-                className={`mt-6 w-full sm:w-auto px-6 py-3 rounded-lg font-semibold transition-all duration-300 shadow-md ${
+                className={`w-full sm:w-auto px-6 py-3 rounded-lg font-semibold text-sm transition-all shadow-sm ${
                   event.registrationStatus === "open" && !registered
-                    ? "bg-green-600 hover:bg-green-700 text-white"
-                    : "bg-gray-700 text-gray-400 cursor-not-allowed"
+                    ? "bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white"
+                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
                 }`}
               >
                 {registered
@@ -146,8 +171,10 @@ const EventDetails = () => {
               </button>
             </div>
           </div>
+          </div>
         </div>
       </div>
+
       <Footer />
     </>
   );
