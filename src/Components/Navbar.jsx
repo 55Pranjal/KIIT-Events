@@ -6,6 +6,7 @@ import axios from "axios";
 const Navbar = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // 🔹 Check login state and token validity
@@ -55,9 +56,34 @@ const Navbar = () => {
     };
   }, []);
 
+  // Fetch unread notification count whenever auth state changes.
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+    const fetchUnread = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const { data } = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/notifications`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (Array.isArray(data)) {
+          setUnreadCount(data.filter((n) => !n.isRead).length);
+        }
+      } catch {
+        /* silent — bell just stays at 0 */
+      }
+    };
+    fetchUnread();
+  }, [user]);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     setUser(null);
+    setUnreadCount(0);
     window.dispatchEvent(new Event("authChange"));
     window.dispatchEvent(new Event("storage"));
     navigate("/");
@@ -80,7 +106,7 @@ const Navbar = () => {
             <img src="/KIIT-Logo-500x500-1.png" alt="" />
           </div>
 
-          <p className="text-xl sm:text-2xl font-semibold text-[#1a1a1a] tracking-tight whitespace-nowrap">
+          <p className="font-display text-xl sm:text-2xl font-bold text-[#1a1a1a] tracking-tightish whitespace-nowrap">
             KIIT <span className="text-emerald-600">Events</span>
           </p>
         </div>
@@ -122,32 +148,82 @@ const Navbar = () => {
         </ul>
 
         {/* Right Side */}
-        <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
           {user ? (
             <>
-              <p className="hidden md:block text-sm text-[#374151] font-medium whitespace-nowrap">
-                Welcome, {user.name}
-              </p>
-
+              {/* Notifications — SVG bell with unread badge */}
               <button
                 onClick={() => handleNavigation("/Notifications")}
-                className="hidden sm:block text-lg hover:text-emerald-600 transition"
+                className="relative hidden sm:flex w-9 h-9 items-center justify-center rounded-full text-[#4b5563] hover:bg-emerald-50 hover:text-emerald-600 transition-all"
+                aria-label={
+                  unreadCount > 0
+                    ? `Notifications, ${unreadCount} unread`
+                    : "Notifications"
+                }
+                title={
+                  unreadCount > 0
+                    ? `${unreadCount} unread`
+                    : "Notifications"
+                }
               >
-                🔔
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-[18px] h-[18px]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                  <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                </svg>
+
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold leading-none flex items-center justify-center ring-2 ring-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
               </button>
 
+              {/* Avatar + first-name pill — also opens Dashboard */}
               <button
                 onClick={() => handleNavigation("/Dashboard")}
-                className="px-4 py-2 rounded-lg text-sm border border-[#ddd] text-[#333] hover:bg-[#ececec] transition"
+                className="flex items-center gap-2 pl-1 pr-1 md:pr-3 py-1 rounded-full border border-[#e5e5e0] hover:bg-[#f7faf8] hover:border-emerald-200 transition-all"
+                title={`Dashboard — ${user.name}`}
+                aria-label={`Open dashboard, signed in as ${user.name}`}
               >
-                Dashboard
+                <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-white text-xs sm:text-sm font-bold">
+                  {user.name?.charAt(0).toUpperCase() || "?"}
+                </span>
+                <span className="hidden md:inline text-sm font-medium text-[#374151] max-w-[100px] truncate">
+                  {user.name?.split(" ")[0] || "Account"}
+                </span>
               </button>
 
+              {/* Log out */}
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 rounded-lg text-sm border border-red-400 text-red-500 hover:bg-red-50 transition"
+                className="px-3 sm:px-4 py-2 rounded-lg text-sm border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 transition"
+                aria-label="Log out"
+                title="Log out"
               >
-                Log out
+                <span className="hidden sm:inline">Log out</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-4 h-4 sm:hidden"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
               </button>
             </>
           ) : (
@@ -191,7 +267,20 @@ const Navbar = () => {
                 onClick={() => handleNavigation("/Notifications")}
                 className="flex justify-center items-center gap-2 py-2 hover:bg-[#ececec] w-full transition font-medium"
               >
-                🔔 Notifications
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-[18px] h-[18px]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                  <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                </svg>
+                Notifications
               </button>
             </li>
           )}
@@ -217,10 +306,15 @@ const Navbar = () => {
         </ul>
 
         {user && (
-          <div className="border-t border-[#e5e5e0] pt-3 text-center">
-            <p className="text-[#374151] font-medium text-sm">
-              Welcome, {user.name}
-            </p>
+          <div className="border-t border-[#e5e5e0] pt-3 pb-3 flex justify-center">
+            <div className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full bg-white border border-[#e5e5e0]">
+              <span className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-white text-xs font-bold">
+                {user.name?.charAt(0).toUpperCase() || "?"}
+              </span>
+              <span className="text-sm font-medium text-[#374151]">
+                {user.name}
+              </span>
+            </div>
           </div>
         )}
       </div>

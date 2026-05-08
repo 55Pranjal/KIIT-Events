@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
@@ -9,7 +10,7 @@ const Footer = () => {
           <div className="w-6 h-6  rounded-md">
             <img src="/KIIT-Logo-500x500-1.png" alt="" />
           </div>
-          <span className="text-sm font-semibold text-[#1a1a1a]">
+          <span className="font-display text-sm font-bold text-[#1a1a1a] tracking-tightish">
             KIIT <span className="text-emerald-600">Events</span>
           </span>
         </div>
@@ -21,15 +22,20 @@ const Footer = () => {
         </p>
 
         {/* Links */}
-        <div className="flex justify-center gap-6 mt-6 text-sm text-gray-500">
-          <button className="hover:text-[#111] transition">
-            Privacy Policy
-          </button>
-          <button className="hover:text-[#111] transition">
-            Terms of Service
-          </button>
-          <button className="hover:text-[#111] transition">Contact</button>
-        </div>
+        <nav className="flex justify-center gap-6 mt-6 text-sm text-gray-500">
+          <Link to="/" className="hover:text-emerald-600 transition">
+            Home
+          </Link>
+          <Link to="/EventsPage" className="hover:text-emerald-600 transition">
+            Events
+          </Link>
+          <Link to="/About" className="hover:text-emerald-600 transition">
+            About
+          </Link>
+          <Link to="/Contact" className="hover:text-emerald-600 transition">
+            Contact
+          </Link>
+        </nav>
 
         {/* Divider */}
         <div className="mt-6 border-t border-[#e5e5e0] pt-4">

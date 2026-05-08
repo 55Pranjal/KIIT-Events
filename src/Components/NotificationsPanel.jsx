@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { toast } from "react-toastify";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import Doodles from "./Doodles";
 import { useNavigate } from "react-router-dom";
 
 const NotificationsPanel = () => {
@@ -9,32 +11,23 @@ const NotificationsPanel = () => {
   const [notifications, setNotifications] = useState([]);
   const token = localStorage.getItem("token");
 
-  // 🔹 Fetch notifications from backend
   const fetchNotifications = async () => {
-    console.log("📨 [FETCH] Fetching notifications...");
     try {
       const { data } = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/notifications`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log("✅ [FETCH SUCCESS] Notifications loaded:", data.length);
       setNotifications(data);
     } catch (err) {
-      console.error("❌ [FETCH ERROR] Failed to load notifications:", err);
+      console.error("Failed to load notifications:", err);
     }
   };
 
   useEffect(() => {
-    console.log("⚙️ [EFFECT] NotificationsPanel mounted");
     fetchNotifications();
-    return () => console.log("🧹 [CLEANUP] NotificationsPanel unmounted");
   }, []);
 
-  // 🔹 Toggle read/unread state
   const handleToggleRead = async (id, currentStatus) => {
-    console.log(
-      `✏️ [TOGGLE] Changing read status for ID: ${id}, Current: ${currentStatus}`
-    );
     try {
       await axios.patch(
         `${import.meta.env.VITE_BACKEND_URL}/api/notifications/${id}/read`,
@@ -45,16 +38,12 @@ const NotificationsPanel = () => {
       setNotifications((prev) =>
         prev.map((n) => (n._id === id ? { ...n, isRead: !currentStatus } : n))
       );
-
-      console.log("✅ [UPDATE] Notification updated successfully");
     } catch (err) {
-      console.error("❌ [TOGGLE ERROR] Failed to update read status:", err);
+      console.error("Failed to update read status:", err);
     }
   };
 
-  // 🔹 Delete all read notifications
   const handleDeleteRead = async () => {
-    console.log("🗑️ [DELETE] Attempting to delete all read notifications...");
     try {
       await axios.delete(
         `${import.meta.env.VITE_BACKEND_URL}/api/notifications/delete-read`,
@@ -62,72 +51,95 @@ const NotificationsPanel = () => {
       );
 
       setNotifications((prev) => prev.filter((n) => !n.isRead));
-      console.log("✅ [DELETE SUCCESS] All read notifications removed");
+      toast.success("Read notifications cleared.");
     } catch (err) {
-      console.error(
-        "❌ [DELETE ERROR] Failed to delete read notifications:",
-        err
-      );
+      console.error("Failed to delete read notifications:", err);
+      toast.error("Failed to delete read notifications.");
     }
   };
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
     <>
       <Navbar />
 
-      <div className="flex flex-col min-h-screen text-white p-4 sm:p-6 md:p-10 mt-10">
-        <div className="max-w-3xl w-full rounded-xl shadow-lg border border-emerald-900/40 p-6 sm:p-10 mx-auto flex flex-col">
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 sm:gap-0">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-wide text-center sm:text-left">
-              Notifications
-            </h2>
+      <div className="relative overflow-hidden flex flex-col flex-grow">
+        <Doodles variant="hero" />
+        <div className="relative z-10 flex flex-col min-h-[80vh] max-w-3xl mx-auto w-full px-4 sm:px-6 py-10">
+          <div className="bg-white border border-[#e5e5e5] rounded-2xl shadow-sm p-6 sm:p-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+            <div>
+              <h2 className="font-display text-2xl md:text-3xl font-bold text-[#111] tracking-tightish">
+                Notifications
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {unreadCount > 0
+                  ? `${unreadCount} unread`
+                  : "You're all caught up."}
+              </p>
+            </div>
 
             <button
-              onClick={() => {
-                console.log("📢 [NAVIGATE] Going to Announcements List page");
-                navigate("/AnnouncementsList");
-              }}
-              className="px-5 py-2 border border-emerald-600 text-emerald-300 font-semibold rounded-lg hover:bg-emerald-800/50 transition w-full sm:w-auto"
+              onClick={() => navigate("/AnnouncementsList")}
+              className="text-sm border border-[#e5e5e5] text-[#333] hover:bg-gray-50 hover:border-emerald-200 font-medium rounded-lg px-4 py-2 transition-all whitespace-nowrap"
             >
-              Announcements
+              View Announcements
             </button>
           </div>
 
-          <div className="flex-grow overflow-y-auto max-h-[60vh]">
+          <div className="overflow-y-auto max-h-[60vh]">
             {notifications.length === 0 ? (
-              <p className="text-center text-gray-400">No notifications yet.</p>
+              <div className="bg-[#f7faf8] border border-dashed border-[#eeeeea] rounded-xl p-10 text-center">
+                <p className="text-gray-500">No notifications yet.</p>
+              </div>
             ) : (
-              <ul className="space-y-3">
+              <ul className="space-y-2.5">
                 {notifications.map((n) => (
                   <li
                     key={n._id}
-                    className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border ${
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border transition-all ${
                       n.isRead
-                        ? "bg-emerald-900/60 border-emerald-800"
-                        : "bg-emerald-800/80 border-emerald-700"
-                    } hover:border-emerald-500 transition-all duration-200`}
+                        ? "bg-white border-[#e5e5e5]"
+                        : "bg-emerald-50 border-emerald-200"
+                    }`}
                   >
-                    <span className="text-sm sm:text-base break-words">
-                      {n.message}
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={n.isRead}
-                      onChange={() => handleToggleRead(n._id, n.isRead)}
-                      className="mt-3 sm:mt-0 ml-0 sm:ml-4 w-5 h-5 accent-emerald-500 cursor-pointer self-start sm:self-auto"
-                    />
+                    <div className="flex items-start gap-3 flex-1">
+                      {!n.isRead && (
+                        <span className="mt-1.5 w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                      )}
+                      <span
+                        className={`text-sm break-words ${
+                          n.isRead ? "text-gray-600" : "text-[#111] font-medium"
+                        }`}
+                      >
+                        {n.message}
+                      </span>
+                    </div>
+                    <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer self-start sm:self-auto">
+                      <input
+                        type="checkbox"
+                        checked={n.isRead}
+                        onChange={() => handleToggleRead(n._id, n.isRead)}
+                        className="w-4 h-4 accent-emerald-500"
+                      />
+                      Read
+                    </label>
                   </li>
                 ))}
               </ul>
             )}
           </div>
 
-          <button
-            onClick={handleDeleteRead}
-            className="mt-6 w-full bg-gradient-to-r from-red-700 to-red-600 hover:from-red-800 hover:to-red-700 text-white py-2 rounded-lg font-semibold transition"
-          >
-            Delete read notifications
-          </button>
+          {notifications.some((n) => n.isRead) && (
+            <button
+              onClick={handleDeleteRead}
+              className="mt-6 w-full sm:w-auto px-4 py-2.5 border border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 rounded-lg font-medium text-sm transition-all"
+            >
+              Delete read notifications
+            </button>
+          )}
+        </div>
         </div>
       </div>
 

@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { toast } from "react-toastify";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import Doodles from "./Doodles";
 import { useNavigate } from "react-router-dom";
 
 const SocietyDetails = () => {
@@ -11,7 +13,6 @@ const SocietyDetails = () => {
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // delete related state
   const [deleteMode, setDeleteMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [deleting, setDeleting] = useState(false);
@@ -29,13 +30,11 @@ const SocietyDetails = () => {
     setError("");
     try {
       const token = localStorage.getItem("token");
-      // NOTE: backend admin route used earlier: /api/admin/societies
       const res = await axios.get(`${BACKEND}/api/adminSociety/societies`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const all = Array.isArray(res.data) ? res.data : [];
-      // keep only approved societies (UI requirement)
       const approved = all.filter((s) => s.requestStatus === "approved");
       setSocieties(approved);
     } catch (err) {
@@ -50,7 +49,6 @@ const SocietyDetails = () => {
     }
   };
 
-  // selection helpers
   const toggleSelect = (id) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -102,28 +100,30 @@ const SocietyDetails = () => {
       const token = localStorage.getItem("token");
       const ids = Array.from(selectedIds);
 
-      // axios.delete with `data` body
       const res = await axios.delete(`${BACKEND}/api/adminSociety/societies`, {
         headers: { Authorization: `Bearer ${token}` },
         data: { ids },
       });
 
       const deletedCount = res.data?.deletedCount ?? ids.length;
-      // remove deleted societies from UI
       setSocieties((prev) =>
         prev.filter((s) => !selectedIds.has(String(s._id)))
       );
       clearSelection();
       setDeleteMode(false);
       console.info(`[SocietyDetails] deleted ${deletedCount} societies`, ids);
+      toast.success(
+        `Deleted ${deletedCount} ${deletedCount === 1 ? "society" : "societies"}.`
+      );
     } catch (err) {
       console.error(
         "[SocietyDetails] bulk delete failed:",
         err?.response?.data || err.message
       );
-      setDeleteError(
-        err?.response?.data?.message || "Failed to delete societies."
-      );
+      const msg =
+        err?.response?.data?.message || "Failed to delete societies.";
+      setDeleteError(msg);
+      toast.error(msg);
     } finally {
       setDeleting(false);
     }
@@ -144,183 +144,195 @@ const SocietyDetails = () => {
   const selectedCount = selectedIds.size;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-[#001a0f] to-[#003319] text-white">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-3xl font-bold">Approved Societies</h1>
+      <div className="relative flex-grow overflow-hidden flex flex-col">
+        <Doodles variant="hero" />
+        <div className="relative z-10 flex-grow max-w-6xl mx-auto w-full px-4 sm:px-6 py-10">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+          <div>
+            <h1 className="font-display text-2xl md:text-3xl font-bold text-[#111] tracking-tightish">
+              Approved{" "}
+              <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">
+                Societies
+              </span>
+            </h1>
             {!deleteMode && (
-              <p className="text-sm text-gray-400">
-                View & manage approved societies
+              <p className="text-sm text-gray-500 mt-1">
+                View &amp; manage approved societies.
               </p>
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             {!deleteMode ? (
-              <button
-                onClick={() => {
-                  console.log("🗂 Navigating to Requests Page");
-                  navigate("/RequestPage");
-                }}
-                className="font-semibold text-sm bg-gradient-to-r from-green-600 to-green-800 hover:from-green-500 hover:to-green-700 transition-all text-white rounded-md px-4 py-2 shadow-md"
-              >
-                Requests
-              </button>
+              <>
+                <button
+                  onClick={() => navigate("/RequestPage")}
+                  className="text-sm bg-emerald-500 hover:bg-emerald-400 text-white font-medium rounded-lg px-4 py-2 shadow-sm transition-all"
+                >
+                  Requests
+                </button>
+                <button
+                  onClick={enterDeleteMode}
+                  className="text-sm border border-red-300 text-red-600 hover:bg-red-50 font-medium rounded-lg px-4 py-2 transition-all"
+                  title="Delete societies"
+                >
+                  Delete
+                </button>
+              </>
             ) : (
               <>
                 <button
                   onClick={() => selectAllVisible(filtered)}
-                  className="px-3 py-2 bg-gray-700 text-white rounded hover:bg-gray-600"
+                  className="text-sm border border-[#e5e5e5] text-[#333] hover:bg-gray-50 rounded-lg px-3 py-2 transition-all"
                 >
                   Select All Visible
                 </button>
                 <button
                   onClick={clearSelection}
-                  className="px-3 py-2 bg-gray-700 text-white rounded hover:bg-gray-600"
+                  className="text-sm border border-[#e5e5e5] text-[#333] hover:bg-gray-50 rounded-lg px-3 py-2 transition-all"
                 >
                   Clear
                 </button>
                 <button
                   onClick={cancelDeleteMode}
-                  className="px-3 py-2 bg-transparent border border-green-700 text-green-300 rounded"
+                  className="text-sm border border-[#e5e5e5] text-[#333] hover:bg-gray-50 rounded-lg px-3 py-2 transition-all"
                 >
                   Cancel
                 </button>
               </>
             )}
-
-            {!deleteMode && (
-              <button
-                onClick={enterDeleteMode}
-                className="font-semibold text-sm bg-red-500 hover:bg-red-800 transition-all text-white rounded-md px-4 py-2 shadow-md"
-                title="Delete societies"
-              >
-                Delete
-              </button>
-            )}
           </div>
         </div>
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3 flex-1">
+          <div className="flex items-center gap-2 flex-1">
             <input
               type="text"
               placeholder="Search societies..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="p-2 rounded bg-[#0d1b12] border border-green-700/40 text-white outline-none w-full"
+              className="px-4 py-2.5 rounded-lg bg-white border border-[#e5e5e5] text-[#111] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all w-full"
             />
             <button
               onClick={() => setSearchTerm("")}
-              className="px-3 py-2 bg-transparent border border-green-700 rounded"
+              className="text-sm border border-[#e5e5e5] text-[#333] hover:bg-gray-50 rounded-lg px-3 py-2.5 transition-all"
             >
               Reset
             </button>
           </div>
 
-          <div className="text-sm text-gray-300 mt-2 md:mt-0">
+          <div className="text-sm text-gray-500 mt-2 md:mt-0 flex-shrink-0">
             Total approved:{" "}
-            <span className="font-semibold">{societies.length}</span> — Showing:{" "}
-            <span className="font-semibold">{filtered.length}</span>
+            <span className="font-semibold text-[#111]">
+              {societies.length}
+            </span>{" "}
+            — Showing:{" "}
+            <span className="font-semibold text-[#111]">
+              {filtered.length}
+            </span>
           </div>
         </div>
 
         {loading ? (
-          <div className="text-center py-8 text-gray-300">
+          <div className="text-center py-12 text-gray-500">
             Loading societies…
           </div>
         ) : error ? (
-          <div className="text-center py-8 text-red-400">{error}</div>
+          <div className="text-center py-12 text-red-500">{error}</div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-8 text-gray-400">
-            No approved societies found.
+          <div className="bg-white border border-dashed border-[#e5e5e5] rounded-xl p-10 text-center">
+            <p className="text-gray-500">No approved societies found.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {filtered.map((s) => (
               <div
                 key={s._id}
-                className="bg-black/50 border border-green-800 rounded-lg p-4 flex items-start gap-4"
+                className="bg-white border border-[#e5e5e5] rounded-xl p-5 shadow-sm hover:shadow-md transition-all flex items-start gap-4"
               >
                 {deleteMode && (
                   <input
                     type="checkbox"
                     checked={selectedIds.has(String(s._id))}
                     onChange={() => toggleSelect(String(s._id))}
-                    className="mt-2 h-5 w-5"
+                    className="mt-1.5 h-5 w-5 accent-emerald-500"
                     aria-label={`Select ${s.name} for deletion`}
                   />
                 )}
 
-                <div className="flex-1">
-                  <div className="flex justify-between items-start gap-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-green-300">
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-semibold text-[#111] break-words">
                         {s.name}
                       </h3>
                       {s.description && (
-                        <p className="text-sm text-gray-300 mt-1">
+                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
                           {s.description}
                         </p>
                       )}
                     </div>
 
-                    <div className="text-sm text-gray-200 text-right">
-                      <div>
-                        <span className="font-medium">Created:</span>{" "}
-                        {new Date(s.createdAt).toLocaleString()}
-                      </div>
-                      <div className="mt-2">
-                        <span className="px-3 py-1 rounded-full text-xs font-medium border bg-green-700/20 border-green-600 text-green-200">
-                          approved
-                        </span>
-                      </div>
-                    </div>
+                    <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-100 text-emerald-700 flex-shrink-0">
+                      approved
+                    </span>
                   </div>
 
-                  <div className="mt-3 text-sm text-gray-200">
+                  <div className="mt-3 pt-3 border-t border-[#eee] text-sm text-gray-600 space-y-1">
                     <div>
-                      <span className="font-medium">President:</span>{" "}
+                      <span className="text-gray-400 font-medium">
+                        President:
+                      </span>{" "}
                       {s.president
                         ? `${s.president.name} (${s.president.email}${
-                            s.president.phone ? `, ${s.president.phone}` : ""
+                            s.president.phone
+                              ? `, ${s.president.phone}`
+                              : ""
                           })`
                         : "N/A"}
                     </div>
                     <div>
-                      <span className="font-medium">Email:</span> {s.email}
+                      <span className="text-gray-400 font-medium">Email:</span>{" "}
+                      {s.email}
                     </div>
                     {s.phone && (
                       <div>
-                        <span className="font-medium">Phone:</span> {s.phone}
+                        <span className="text-gray-400 font-medium">
+                          Phone:
+                        </span>{" "}
+                        {s.phone}
                       </div>
                     )}
+                    <div className="text-xs text-gray-400 pt-1">
+                      Created {new Date(s.createdAt).toLocaleString()}
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         )}
+        </div>
       </div>
 
-      {/* Sticky action bar - appears when in deleteMode */}
       {deleteMode && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-black/80 border border-red-700 rounded-xl px-4 py-3 flex items-center gap-4 shadow-lg z-50">
-          <div className="text-sm text-gray-200">
-            Selected: <span className="font-semibold">{selectedCount}</span> /{" "}
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white border border-[#e5e5e5] rounded-xl px-4 py-3 flex items-center gap-3 shadow-2xl z-50">
+          <div className="text-sm text-gray-600">
+            Selected:{" "}
+            <span className="font-semibold text-[#111]">{selectedCount}</span> /{" "}
             <span className="text-gray-400">{visibleCount}</span>
           </div>
 
           <button
             onClick={confirmDelete}
             disabled={deleting || selectedCount === 0}
-            className={`px-4 py-2 rounded ${
+            className={`text-sm font-medium rounded-lg px-4 py-2 transition-all ${
               selectedCount === 0
-                ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                : "bg-red-600 text-white hover:bg-red-700"
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-red-500 text-white hover:bg-red-600 shadow-sm"
             }`}
           >
             {deleting ? "Deleting…" : `Confirm Delete (${selectedCount})`}
@@ -329,13 +341,13 @@ const SocietyDetails = () => {
           <button
             onClick={cancelDeleteMode}
             disabled={deleting}
-            className="px-3 py-2 rounded bg-transparent border border-green-700 text-green-300"
+            className="text-sm border border-[#e5e5e5] text-[#333] hover:bg-gray-50 rounded-lg px-3 py-2 transition-all"
           >
             Cancel
           </button>
 
           {deleteError && (
-            <div className="text-sm text-red-400 ml-3">{deleteError}</div>
+            <div className="text-sm text-red-500 ml-2">{deleteError}</div>
           )}
         </div>
       )}

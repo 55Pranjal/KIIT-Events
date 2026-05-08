@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { toast } from "react-toastify";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import Doodles from "./Doodles";
 
 const AdminQueries = () => {
   const [queries, setQueries] = useState([]);
@@ -16,7 +18,6 @@ const AdminQueries = () => {
 
     const fetchQueries = async () => {
       try {
-        console.info("[INFO] Fetching all student queries...");
         const res = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/api/queries`,
           {
@@ -26,16 +27,15 @@ const AdminQueries = () => {
           }
         );
         setQueries(res.data);
-        console.info("[INFO] Queries fetched successfully:", res.data.length);
       } catch (err) {
         console.error(
           "[ERROR] Failed to fetch queries:",
           err.response?.status || err.message
         );
         if (err.response?.status === 401) {
-          alert("Unauthorized! Please login again.");
+          toast.error("Unauthorized — please log in again.");
         } else {
-          alert("Failed to fetch queries.");
+          toast.error("Failed to fetch queries.");
         }
       }
     };
@@ -46,34 +46,28 @@ const AdminQueries = () => {
   const handleReply = async (id) => {
     const token = localStorage.getItem("token");
     if (!token) {
-      console.warn("[WARN] No auth token found while sending reply");
-      return alert("Unauthorized! Please login again.");
+      toast.error("Unauthorized — please log in again.");
+      return;
     }
 
     try {
-      console.info(`[INFO] Sending reply for query ID: ${id}`);
       await axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/api/queries/${id}`,
         { reply },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setReply("");
-      alert("✅ Reply sent!");
-      console.info("[SUCCESS] Reply sent successfully");
+      toast.success("Reply sent!");
     } catch (error) {
       console.error(
         "[ERROR] Failed to send reply:",
         error.response?.status || error.message
       );
       if (error.response?.status === 401) {
-        alert("Unauthorized! Please login again.");
+        toast.error("Unauthorized — please log in again.");
       } else {
-        alert("Failed to send reply.");
+        toast.error("Failed to send reply.");
       }
     }
   };
@@ -81,63 +75,81 @@ const AdminQueries = () => {
   return (
     <>
       <Navbar />
-      <div className="py-16 text-white px-6 min-h-screen">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8 text-center text-green-400">
-            Student Queries Dashboard
+
+      <div className="relative overflow-hidden flex flex-col">
+        <Doodles variant="hero" />
+        <div className="relative z-10 max-w-4xl mx-auto w-full px-4 sm:px-6 py-10 min-h-[80vh]">
+        <div className="mb-8">
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#111] tracking-tightish">
+            Student{" "}
+            <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">
+              Queries
+            </span>
           </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Review and respond to messages from students.
+          </p>
+        </div>
 
-          {queries.length === 0 ? (
-            <p className="text-center text-gray-400">No queries found.</p>
-          ) : (
-            <div className="space-y-6">
-              {queries.map((q) => (
-                <div
-                  key={q._id}
-                  className="bg-white/10 p-6 rounded-2xl border border-white/10 hover:border-green-500/40 shadow-lg backdrop-blur-md transition-all duration-300"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h2 className="font-semibold text-lg text-green-300">
-                        {q.name}
-                      </h2>
-                      <p className="text-gray-400 text-sm">{q.email}</p>
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      {new Date(q.createdAt).toLocaleDateString()}
-                    </span>
+        {queries.length === 0 ? (
+          <div className="bg-white border border-dashed border-[#e5e5e5] rounded-xl p-10 text-center">
+            <p className="text-gray-500">No queries found.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {queries.map((q) => (
+              <div
+                key={q._id}
+                className="bg-white border border-[#e5e5e5] rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-all"
+              >
+                <div className="flex justify-between items-start gap-3">
+                  <div className="min-w-0">
+                    <h2 className="font-semibold text-[#111] text-base sm:text-lg break-words">
+                      {q.name}
+                    </h2>
+                    <p className="text-gray-400 text-xs sm:text-sm break-words">
+                      {q.email}
+                    </p>
                   </div>
-
-                  <p className="mt-3 text-gray-200">{q.message}</p>
-
-                  {q.reply ? (
-                    <div className="mt-4 bg-green-900/30 border border-green-600/40 p-3 rounded-lg">
-                      <p className="text-green-300">
-                        <strong>Admin Reply:</strong> {q.reply}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="mt-4 flex flex-col sm:flex-row gap-3">
-                      <input
-                        value={reply}
-                        onChange={(e) => setReply(e.target.value)}
-                        placeholder="Write your reply..."
-                        className="bg-transparent border border-white/20 rounded-xl px-4 py-2 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500/50 w-full sm:w-3/4"
-                      />
-                      <button
-                        onClick={() => handleReply(q._id)}
-                        className="bg-gradient-to-r from-green-700 to-green-500 hover:from-green-600 hover:to-green-400 px-5 py-2 rounded-xl font-semibold shadow-md transition-all"
-                      >
-                        Send
-                      </button>
-                    </div>
-                  )}
+                  <span className="text-xs text-gray-400 flex-shrink-0">
+                    {new Date(q.createdAt).toLocaleDateString()}
+                  </span>
                 </div>
-              ))}
-            </div>
-          )}
+
+                <p className="mt-3 text-gray-700 text-sm sm:text-base">
+                  {q.message}
+                </p>
+
+                {q.reply ? (
+                  <div className="mt-4 bg-emerald-50 border border-emerald-100 p-3 rounded-lg">
+                    <p className="text-xs uppercase tracking-wider font-semibold text-emerald-600 mb-1">
+                      Admin Reply
+                    </p>
+                    <p className="text-sm text-gray-700">{q.reply}</p>
+                  </div>
+                ) : (
+                  <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                    <input
+                      value={reply}
+                      onChange={(e) => setReply(e.target.value)}
+                      placeholder="Write your reply..."
+                      className="flex-1 bg-white border border-[#e5e5e5] rounded-lg px-4 py-2.5 text-[#111] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                    />
+                    <button
+                      onClick={() => handleReply(q._id)}
+                      className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white font-medium rounded-lg shadow-sm transition-all"
+                    >
+                      Send
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
         </div>
       </div>
+
       <Footer />
     </>
   );

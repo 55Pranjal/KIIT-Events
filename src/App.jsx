@@ -31,6 +31,8 @@ import EventsPage from "./Components/EventsPage";
 import CreateHighlights from "./Components/CreateHighlights";
 import EventHighlightSingle from "./Components/EventHighlights";
 import LoadingPage from "./Components/LoadingPage";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   const navigate = useNavigate();
@@ -89,6 +91,19 @@ function App() {
         />
         <Route path="*" element={<LoadingPage />} />
       </Routes>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={3500}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnFocusLoss
+        pauseOnHover
+        theme="light"
+        toastClassName="!rounded-xl !text-sm !font-medium !shadow-lg !border !border-[#e5e5e5]"
+        progressClassName="!bg-emerald-500"
+      />
     </>
   );
 }

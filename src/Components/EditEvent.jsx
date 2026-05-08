@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { toast } from "react-toastify";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import Doodles from "./Doodles";
+import Spinner from "./Spinner";
 
 const EditEvent = () => {
   const { eventId } = useParams();
@@ -10,9 +13,9 @@ const EditEvent = () => {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [removing, setRemoving] = useState(false);
 
-  // Fetch event details
   useEffect(() => {
     const fetchEvent = async () => {
       try {
@@ -40,22 +43,14 @@ const EditEvent = () => {
     fetchEvent();
   }, [eventId]);
 
-  // Handle input changes
   const handleChange = (e) => {
     setEvent({ ...event, [e.target.name]: e.target.value });
-    if (import.meta.env.MODE === "development")
-      console.log(
-        `[EditEvent] Field changed: ${e.target.name} = ${e.target.value}`
-      );
   };
 
-  // Handle event update
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
-      if (import.meta.env.MODE === "development")
-        console.log("[EditEvent] Updating event:", event);
-
       const token = localStorage.getItem("token");
       await axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/api/events/${eventId}`,
@@ -63,67 +58,83 @@ const EditEvent = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setMessage("Event updated successfully!");
-      if (import.meta.env.MODE === "development")
-        console.log("[EditEvent] Event updated successfully");
-
-      setTimeout(() => navigate("/dashboard"), 1500);
+      toast.success("Event updated successfully!");
+      setTimeout(() => navigate("/dashboard"), 1200);
     } catch (err) {
       console.error("[EditEvent] Error updating event:", err);
-      setMessage(err.response?.data?.message || "Failed to update event");
+      toast.error(err.response?.data?.message || "Failed to update event");
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  // Handle event removal
   const handleRemove = async () => {
-    if (window.confirm("Are you sure you want to remove this event?")) {
-      try {
-        if (import.meta.env.MODE === "development")
-          console.log("[EditEvent] Removing event:", eventId);
+    if (!window.confirm("Are you sure you want to remove this event?")) return;
+    setRemoving(true);
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(
+        `${import.meta.env.VITE_BACKEND_URL}/api/events/${eventId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-        const token = localStorage.getItem("token");
-        await axios.delete(
-          `${import.meta.env.VITE_BACKEND_URL}/api/events/${eventId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        alert("Event removed successfully!");
-        if (import.meta.env.MODE === "development")
-          console.log("[EditEvent] Event removed successfully");
-
-        navigate("/dashboard");
-      } catch (err) {
-        console.error("[EditEvent] Error removing event:", err);
-        alert(err.response?.data?.message || "Failed to remove event");
-      }
+      toast.success("Event removed.");
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("[EditEvent] Error removing event:", err);
+      toast.error(err.response?.data?.message || "Failed to remove event");
+    } finally {
+      setRemoving(false);
     }
   };
 
   if (loading)
-    return <p className="text-center mt-10 text-gray-300">Loading...</p>;
-  if (error) return <p className="text-red-500 text-center mt-10">{error}</p>;
+    return (
+      <>
+        <Navbar />
+        <p className="text-center mt-10 text-gray-500">Loading...</p>
+      </>
+    );
+  if (error)
+    return (
+      <>
+        <Navbar />
+        <p className="text-red-500 text-center mt-10">{error}</p>
+      </>
+    );
+
+  const inputClass =
+    "rounded-lg p-3 w-full bg-white border border-[#e5e5e5] text-[#111] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all";
 
   return (
     <>
       <Navbar />
 
-      <div className="flex justify-center items-center px-4 py-10">
-        <form
-          onSubmit={handleSubmit}
-          className="w-full max-w-3xl bg-gradient-to-br from-black via-[#001a00] to-[#003300] text-white rounded-2xl p-8 sm:p-10 border border-green-500/20 shadow-[0_0_40px_-10px_rgba(0,255,100,0.3)]"
-        >
-          <h1 className="text-3xl font-semibold text-center mb-8 bg-gradient-to-r from-green-400 to-emerald-600 bg-clip-text text-transparent">
-            Edit Event
+      <div className="relative overflow-hidden flex flex-col">
+        <Doodles variant="hero" />
+        <div className="relative z-10 flex justify-center px-4 py-10">
+          <form
+            onSubmit={handleSubmit}
+            className="w-full max-w-3xl bg-white border border-[#e5e5e5] rounded-2xl p-6 sm:p-10 shadow-sm"
+          >
+          <h1 className="font-display text-3xl font-bold text-center mb-2 text-[#111] tracking-tightish">
+            Edit{" "}
+            <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">
+              Event
+            </span>
           </h1>
+          <p className="text-center text-sm text-gray-500 mb-8">
+            Update event information or remove the event entirely.
+          </p>
 
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-4">
             <input
               type="text"
               name="title"
               value={event.title}
               onChange={handleChange}
               placeholder="Event Title"
-              className="p-3 rounded-lg bg-black/60 border border-green-500/20 placeholder-gray-400 text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+              className={inputClass}
               required
             />
 
@@ -133,7 +144,7 @@ const EditEvent = () => {
                 name="date"
                 value={event.date}
                 onChange={handleChange}
-                className="flex-1 p-3 rounded-lg bg-black/60 border border-green-500/20 text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className={`flex-1 ${inputClass}`}
                 required
               />
               <input
@@ -141,7 +152,7 @@ const EditEvent = () => {
                 name="time"
                 value={event.time}
                 onChange={handleChange}
-                className="flex-1 p-3 rounded-lg bg-black/60 border border-green-500/20 text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className={`flex-1 ${inputClass}`}
                 required
               />
             </div>
@@ -152,7 +163,7 @@ const EditEvent = () => {
               value={event.location}
               onChange={handleChange}
               placeholder="Location"
-              className="p-3 rounded-lg bg-black/60 border border-green-500/20 placeholder-gray-400 text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className={inputClass}
             />
 
             <textarea
@@ -160,7 +171,8 @@ const EditEvent = () => {
               value={event.description}
               onChange={handleChange}
               placeholder="Description"
-              className="p-3 rounded-lg bg-black/60 border border-green-500/20 placeholder-gray-400 text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[100px]"
+              rows={4}
+              className={`${inputClass} resize-none`}
             />
 
             <input
@@ -169,14 +181,14 @@ const EditEvent = () => {
               value={event.guest}
               onChange={handleChange}
               placeholder="Guest"
-              className="p-3 rounded-lg bg-black/60 border border-green-500/20 placeholder-gray-400 text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className={inputClass}
             />
 
             <select
               name="registrationStatus"
               value={event.registrationStatus}
               onChange={handleChange}
-              className="p-3 rounded-lg bg-black/60 border border-green-500/20 text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className={inputClass}
             >
               <option value="open">Open</option>
               <option value="closed">Closed</option>
@@ -189,7 +201,7 @@ const EditEvent = () => {
               value={event.coverImageURL}
               onChange={handleChange}
               placeholder="Cover Image URL"
-              className="p-3 rounded-lg bg-black/60 border border-green-500/20 placeholder-gray-400 text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className={inputClass}
             />
 
             <select
@@ -197,7 +209,7 @@ const EditEvent = () => {
               value={event.eventCategory}
               onChange={handleChange}
               required
-              className="p-3 rounded-lg bg-black/60 border border-green-500/20 text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className={inputClass}
             >
               <option value="" disabled>
                 Event Category
@@ -208,34 +220,29 @@ const EditEvent = () => {
               <option value="Other">Other</option>
             </select>
 
-            <div className="flex flex-col sm:flex-row justify-between gap-4 mt-4">
+            <div className="flex flex-col sm:flex-row gap-3 mt-4">
               <button
                 type="submit"
-                className="flex-1 py-3 bg-gradient-to-r from-green-700 to-emerald-600 hover:from-green-600 hover:to-emerald-500 rounded-lg font-semibold transition-all shadow-[0_0_20px_rgba(0,255,100,0.3)] hover:shadow-[0_0_30px_rgba(0,255,100,0.5)]"
+                disabled={submitting || removing}
+                className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 disabled:bg-emerald-300 disabled:cursor-not-allowed rounded-lg font-semibold text-white shadow-sm transition-all flex items-center justify-center gap-2"
               >
-                Update Event
+                {submitting && <Spinner className="w-4 h-4" />}
+                {submitting ? "Updating…" : "Update Event"}
               </button>
 
               <button
                 type="button"
                 onClick={handleRemove}
-                className="flex-1 py-3 bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 rounded-lg font-semibold transition-all"
+                disabled={submitting || removing}
+                className="flex-1 py-3 border border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 disabled:opacity-60 disabled:cursor-not-allowed rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
               >
-                Remove Event
+                {removing && <Spinner className="w-4 h-4" />}
+                {removing ? "Removing…" : "Remove Event"}
               </button>
             </div>
-
-            {message && (
-              <p
-                className={`mt-5 text-center font-medium ${
-                  message.includes("Failed") ? "text-red-400" : "text-green-400"
-                }`}
-              >
-                {message}
-              </p>
-            )}
           </div>
         </form>
+        </div>
       </div>
 
       <Footer />

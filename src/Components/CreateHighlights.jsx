@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import Navbar from "./Navbar";
+import Footer from "./Footer";
+import Doodles from "./Doodles";
+import Spinner from "./Spinner";
 import UploadPoster from "./UploadPoster";
+import { optimizeThumb, optimizeAvatar } from "../utils/imageOptimization";
 
 const MAX_FILES = 8;
 const MAX_SIZE = 12 * 1024 * 1024; // 12MB
@@ -23,7 +28,7 @@ export default function CreateHighlight() {
   const [keyHighlights, setKeyHighlights] = useState([""]);
   const [status, setStatus] = useState("draft");
   const [featured, setFeatured] = useState(false);
-  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const BACKEND = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
 
@@ -33,7 +38,6 @@ export default function CreateHighlight() {
 
   const MAX_SHORT_DESC_CHARS = 400;
 
-  // returns true if short description exceeds limit
   const isShortDescriptionInvalid = () =>
     shortDescription.length > MAX_SHORT_DESC_CHARS;
 
@@ -59,7 +63,6 @@ export default function CreateHighlight() {
       });
   }, []);
 
-  // FILE HANDLING FOR GALLERY
   function handleFilesChange(e) {
     const files = Array.from(e.target.files || []);
     const next = [...gallery];
@@ -68,7 +71,7 @@ export default function CreateHighlight() {
       if (next.length >= MAX_FILES) break;
       if (!file.type.startsWith("image/")) continue;
       if (file.size > MAX_SIZE) {
-        alert(`${file.name} is too large.`);
+        toast.warn(`${file.name} is too large (max 12MB).`);
         continue;
       }
       next.push({
@@ -95,7 +98,6 @@ export default function CreateHighlight() {
     });
   }
 
-  // GUEST HANDLERS (multiple guests)
   function addGuest() {
     setGuests((prev) => [
       ...prev,
@@ -104,10 +106,7 @@ export default function CreateHighlight() {
   }
 
   function removeGuest(index) {
-    setGuests((prev) => {
-      const copy = prev.filter((_, i) => i !== index);
-      return copy;
-    });
+    setGuests((prev) => prev.filter((_, i) => i !== index));
   }
 
   function updateGuestField(index, key, value) {
@@ -118,7 +117,6 @@ export default function CreateHighlight() {
     });
   }
 
-  // This handler is used if UploadPoster returns a url (it calls onUploaded)
   function handleGuestUploaded(index, url) {
     setGuests((prev) => {
       const copy = [...prev];
@@ -127,31 +125,9 @@ export default function CreateHighlight() {
     });
   }
 
-  // If UploadPoster supports previewing an already-uploaded url, we pass initialPreviewUrl below.
-
-  // If you ever want to support selecting a local file for guest photo and upload via uploadFile:
-  function setGuestLocalPhoto(index, file) {
-    // file should be a File object
-    const preview = URL.createObjectURL(file);
-    setGuests((prev) => {
-      const copy = [...prev];
-      copy[index] = {
-        ...copy[index],
-        photo: {
-          file,
-          previewUrl: preview,
-          url: null,
-          uploading: false,
-          progress: 0,
-        },
-      };
-      return copy;
-    });
-  }
-
   async function uploadFile(fileObj, onProgress) {
     const form = new FormData();
-    form.append("poster", fileObj); // ✅ MUST MATCH backend "poster"
+    form.append("poster", fileObj);
 
     const res = await axios.post(`${BACKEND}/api/upload`, form, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -166,15 +142,18 @@ export default function CreateHighlight() {
   async function handleSubmit(e) {
     e.preventDefault();
 
-    if (!title.trim()) return alert("Title required");
-    if (!shortDescription.trim()) return alert("Short description required");
-    if (gallery.length === 0) return alert("Upload at least one image");
-    if (!eventId) return alert("Select an event");
+    if (!title.trim()) return toast.warn("Title is required.");
+    if (!shortDescription.trim())
+      return toast.warn("Short description is required.");
+    if (gallery.length === 0)
+      return toast.warn("Upload at least one image.");
+    if (!eventId) return toast.warn("Select an event.");
+
+    setSubmitting(true);
 
     try {
       const uploadedGallery = [];
 
-      // Upload gallery files
       for (let i = 0; i < gallery.length; i++) {
         const g = gallery[i];
 
@@ -200,13 +179,11 @@ export default function CreateHighlight() {
         });
       }
 
-      // Upload guest photos if they have a local file; otherwise use provided URL (from UploadPoster)
       const uploadedGuests = [];
       for (let i = 0; i < guests.length; i++) {
         const g = guests[i];
         let photoObj = null;
 
-        // If maintainer used setGuestLocalPhoto to set a local file
         if (g.photo && g.photo.file) {
           const url = await uploadFile(g.photo.file, (pct) => {
             setGuests((prev) => {
@@ -228,7 +205,6 @@ export default function CreateHighlight() {
             return copy;
           });
         } else if (g.photo && g.photo.url) {
-          // photo already uploaded via UploadPoster or prefilled
           photoObj = { url: g.photo.url };
         }
 
@@ -262,105 +238,129 @@ export default function CreateHighlight() {
           },
         }
       );
-      setMessage("Highlight created successfully!");
-      setTimeout(
-        () =>
-          navigate(`/EventsPage
-            `),
-        800
-      );
+      toast.success("Highlight created successfully!");
+      setTimeout(() => navigate(`/EventsPage`), 800);
     } catch (err) {
       console.error(err);
-      setMessage("Failed to create highlight.");
+      toast.error("Failed to create highlight.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
+  const inputClass =
+    "rounded-lg p-3 w-full bg-white border border-[#e5e5e5] text-[#111] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all";
+  const sectionLabel =
+    "text-xs font-medium text-gray-500 uppercase tracking-wider";
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-[#001a0f] to-[#003319] text-white flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <div className="flex justify-center items-center flex-grow px-4 py-10">
-        <div className="bg-black/40 border border-green-900/30 backdrop-blur-md shadow-xl shadow-green-900/40 w-full max-w-3xl rounded-2xl py-8 px-6 sm:px-10">
-          <h1 className="text-center font-bold text-3xl mb-6 bg-gradient-to-r from-green-400 to-emerald-300 text-transparent bg-clip-text drop-shadow-md">
-            Create Highlight
+      <div className="relative flex-grow overflow-hidden flex flex-col">
+        <Doodles variant="hero" />
+        <div className="relative z-10 flex justify-center flex-grow px-4 py-10">
+          <div className="bg-white border border-[#e5e5e5] shadow-sm w-full max-w-3xl rounded-2xl py-8 px-6 sm:px-10">
+          <h1 className="font-display text-center font-bold text-3xl mb-2 text-[#111] tracking-tightish">
+            Create{" "}
+            <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">
+              Highlight
+            </span>
           </h1>
+          <p className="text-center text-sm text-gray-500 mb-6">
+            Showcase what happened at an event with photos and stories.
+          </p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             {/* EVENT SELECT */}
-            <select
-              required
-              value={eventId}
-              onChange={(e) => setEventId(e.target.value)}
-              className="rounded-lg p-3 bg-[#0d1b12] border border-green-700/40 text-gray-300"
-            >
-              {events.map((ev) => (
-                <option key={ev._id} value={ev._1d || ev._id}>
-                  {ev.title}
-                </option>
-              ))}
-            </select>
+            <div className="space-y-1.5">
+              <label className={sectionLabel}>Event</label>
+              <select
+                required
+                value={eventId}
+                onChange={(e) => setEventId(e.target.value)}
+                className={inputClass}
+              >
+                {events.map((ev) => (
+                  <option key={ev._id} value={ev._1d || ev._id}>
+                    {ev.title}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* TITLE */}
-            <input
-              type="text"
-              placeholder="Highlight Title"
-              value={title}
-              required
-              onChange={(e) => setTitle(e.target.value)}
-              className="rounded-lg p-3 bg-[#0d1b12] border border-green-700/40"
-            />
+            <div className="space-y-1.5">
+              <label className={sectionLabel}>Title</label>
+              <input
+                type="text"
+                placeholder="Highlight Title"
+                value={title}
+                required
+                onChange={(e) => setTitle(e.target.value)}
+                className={inputClass}
+              />
+            </div>
 
             {/* SHORT DESCRIPTION */}
-            <textarea
-              rows={2}
-              placeholder="Short Description (max 400 characters)"
-              value={shortDescription}
-              onChange={(e) => setShortDescription(e.target.value)}
-              className="rounded-lg p-3 bg-[#0d1b12] border border-green-700/40 resize-none"
-            />
-
-            <p
-              className={`text-sm text-right mt-1 ${
-                isShortDescriptionInvalid() ? "text-red-400" : "text-green-300"
-              }`}
-            >
-              {shortDescription.length} / {MAX_SHORT_DESC_CHARS} characters
-            </p>
+            <div className="space-y-1.5">
+              <label className={sectionLabel}>Short Description</label>
+              <textarea
+                rows={2}
+                placeholder="Short Description (max 400 characters)"
+                value={shortDescription}
+                onChange={(e) => setShortDescription(e.target.value)}
+                className={`${inputClass} resize-none`}
+              />
+              <p
+                className={`text-xs text-right ${
+                  isShortDescriptionInvalid()
+                    ? "text-red-500"
+                    : "text-gray-400"
+                }`}
+              >
+                {shortDescription.length} / {MAX_SHORT_DESC_CHARS} characters
+              </p>
+            </div>
 
             {/* LONG DESCRIPTION */}
-            <textarea
-              rows={6}
-              placeholder="Long Description (What happened?)"
-              value={longDescription}
-              onChange={(e) => setLongDescription(e.target.value)}
-              className="rounded-lg p-3 bg-[#0d1b12] border border-green-700/40"
-            />
+            <div className="space-y-1.5">
+              <label className={sectionLabel}>Long Description</label>
+              <textarea
+                rows={6}
+                placeholder="Long Description (What happened?)"
+                value={longDescription}
+                onChange={(e) => setLongDescription(e.target.value)}
+                className={`${inputClass} resize-none`}
+              />
+            </div>
 
             {/* GALLERY UPLOAD */}
             <div>
-              <p className="text-green-300 mb-2">Gallery Images</p>
+              <p className={`${sectionLabel} mb-2`}>Gallery Images</p>
               <input
                 type="file"
                 ref={fileRef}
                 accept="image/*"
                 multiple
                 onChange={handleFilesChange}
-                className="text-gray-300"
+                className="text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
               />
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
                 {gallery.map((g, i) => (
                   <div
                     key={i}
-                    className="bg-[#0d1b12] border border-green-700/40 rounded-xl p-3"
+                    className="bg-[#f7faf8] border border-[#eeeeea] rounded-xl p-3"
                   >
                     <img
-                      src={g.previewUrl || g.url}
+                      src={g.previewUrl || optimizeThumb(g.url)}
                       className="rounded-md h-28 w-full object-cover"
+                      alt=""
+                      loading="lazy"
                     />
 
                     <input
-                      className="mt-2 p-1 rounded bg-black/40 border border-green-700/30 w-full"
+                      className="mt-2 p-2 text-sm rounded bg-white border border-[#e5e5e5] w-full focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       placeholder="Alt text"
                       value={g.alt}
                       onChange={(e) =>
@@ -373,7 +373,7 @@ export default function CreateHighlight() {
                     />
 
                     <input
-                      className="mt-2 p-1 rounded bg-black/40 border border-green-700/30 w-full"
+                      className="mt-2 p-2 text-sm rounded bg-white border border-[#e5e5e5] w-full focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       placeholder="Credit"
                       value={g.credit}
                       onChange={(e) =>
@@ -388,7 +388,7 @@ export default function CreateHighlight() {
                     <button
                       type="button"
                       onClick={() => removeGalleryItem(i)}
-                      className="mt-2 text-red-400 hover:text-red-300"
+                      className="mt-2 text-xs text-red-500 hover:text-red-600 font-medium"
                     >
                       Remove
                     </button>
@@ -397,14 +397,14 @@ export default function CreateHighlight() {
               </div>
             </div>
 
-            {/* GUESTS SECTION (multiple guests) */}
+            {/* GUESTS SECTION */}
             <div>
-              <div className="flex items-center justify-between">
-                <p className="text-green-300 mb-2">Guests</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className={sectionLabel}>Guests</p>
                 <button
                   type="button"
                   onClick={addGuest}
-                  className="text-green-300 hover:text-green-200"
+                  className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold"
                 >
                   + Add Guest
                 </button>
@@ -414,14 +414,16 @@ export default function CreateHighlight() {
                 {guests.map((g, idx) => (
                   <div
                     key={idx}
-                    className="bg-[#0d1b12] border border-green-700/40 rounded-xl p-4"
+                    className="bg-[#f7faf8] border border-[#eeeeea] rounded-xl p-4"
                   >
-                    <div className="flex justify-between items-start">
-                      <h4 className="font-semibold">Guest {idx + 1}</h4>
+                    <div className="flex justify-between items-start mb-3">
+                      <h4 className="font-semibold text-[#111] text-sm">
+                        Guest {idx + 1}
+                      </h4>
                       <button
                         type="button"
                         onClick={() => removeGuest(idx)}
-                        className="text-red-400 hover:text-red-300"
+                        className="text-xs text-red-500 hover:text-red-600 font-medium"
                       >
                         Remove
                       </button>
@@ -434,7 +436,7 @@ export default function CreateHighlight() {
                       onChange={(e) =>
                         updateGuestField(idx, "name", e.target.value)
                       }
-                      className="rounded-lg p-3 bg-[#0d1b12] border border-green-700/40 w-full mb-2 mt-3"
+                      className={`${inputClass} mb-2`}
                     />
 
                     <input
@@ -444,7 +446,7 @@ export default function CreateHighlight() {
                       onChange={(e) =>
                         updateGuestField(idx, "title", e.target.value)
                       }
-                      className="rounded-lg p-3 bg-[#0d1b12] border border-green-700/40 w-full mb-2"
+                      className={`${inputClass} mb-2`}
                     />
 
                     <textarea
@@ -454,20 +456,26 @@ export default function CreateHighlight() {
                       onChange={(e) =>
                         updateGuestField(idx, "bio", e.target.value)
                       }
-                      className="rounded-lg p-3 bg-[#0d1b12] border border-green-700/40 w-full mb-3"
+                      className={`${inputClass} mb-3 resize-none`}
                     />
 
                     <div className="mt-2">
                       <UploadPoster
                         onUploaded={(url) => handleGuestUploaded(idx, url)}
-                        initialPreviewUrl={g.photo?.url || g.photo?.previewUrl}
+                        initialPreviewUrl={
+                          g.photo?.url || g.photo?.previewUrl
+                        }
                       />
                       {g.photo && (g.photo.url || g.photo.previewUrl) && (
                         <div className="mt-3">
                           <img
-                            src={g.photo.url || g.photo.previewUrl}
+                            src={
+                              g.photo.previewUrl ||
+                              optimizeAvatar(g.photo.url)
+                            }
                             alt={g.name || `guest-${idx + 1}`}
-                            className="h-20 rounded-md object-cover"
+                            loading="lazy"
+                            className="h-20 rounded-md object-cover border border-[#e5e5e5]"
                           />
                         </div>
                       )}
@@ -479,7 +487,7 @@ export default function CreateHighlight() {
 
             {/* KEY HIGHLIGHTS */}
             <div>
-              <p className="text-green-300 mb-2">Key Highlights</p>
+              <p className={`${sectionLabel} mb-2`}>Key Highlights</p>
               {keyHighlights.map((k, idx) => (
                 <div key={idx} className="flex gap-3 mb-2">
                   <input
@@ -493,7 +501,7 @@ export default function CreateHighlight() {
                         )
                       )
                     }
-                    className="flex-1 rounded-lg p-3 bg-[#0d1b12] border border-green-700/40"
+                    className={`flex-1 ${inputClass}`}
                   />
                   <button
                     type="button"
@@ -502,7 +510,7 @@ export default function CreateHighlight() {
                         prev.filter((_, i) => i !== idx)
                       )
                     }
-                    className="text-red-400 hover:text-red-300"
+                    className="text-sm text-red-500 hover:text-red-600 font-medium px-2"
                   >
                     Remove
                   </button>
@@ -511,29 +519,33 @@ export default function CreateHighlight() {
               <button
                 type="button"
                 onClick={() => setKeyHighlights((prev) => [...prev, ""])}
-                className="text-green-300 hover:text-green-200"
+                className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold"
               >
                 + Add Highlight
               </button>
             </div>
 
             {/* STATUS */}
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="rounded-lg p-3 bg-[#0d1b12] border border-green-700/40 text-gray-300"
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-              <option value="archived">Archived</option>
-            </select>
+            <div className="space-y-1.5">
+              <label className={sectionLabel}>Status</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className={inputClass}
+              >
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
 
             {/* FEATURED */}
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-2 text-sm text-gray-600">
               <input
                 type="checkbox"
                 checked={featured}
                 onChange={(e) => setFeatured(e.target.checked)}
+                className="w-4 h-4 accent-emerald-500"
               />
               Feature on Homepage
             </label>
@@ -541,28 +553,22 @@ export default function CreateHighlight() {
             {/* SUBMIT */}
             <button
               type="submit"
-              disabled={isShortDescriptionInvalid()}
-              className={`mt-4 font-semibold rounded-lg py-2.5 transition-all duration-300
-    ${
-      isShortDescriptionInvalid()
-        ? "bg-gray-600 cursor-not-allowed"
-        : "bg-gradient-to-r from-green-700 to-emerald-600 hover:scale-[1.02]"
-    }
-  `}
+              disabled={isShortDescriptionInvalid() || submitting}
+              className={`mt-2 font-semibold rounded-lg py-3 text-white shadow-sm transition-all flex items-center justify-center gap-2 ${
+                isShortDescriptionInvalid() || submitting
+                  ? "bg-emerald-300 cursor-not-allowed"
+                  : "bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600"
+              }`}
             >
-              Create Highlight
+              {submitting && <Spinner className="w-4 h-4" />}
+              {submitting ? "Creating…" : "Create Highlight"}
             </button>
-
-            {message && (
-              <p className="text-center text-green-300 mt-2">{message}</p>
-            )}
           </form>
+        </div>
         </div>
       </div>
 
-      <footer className="w-full bg-gradient-to-r from-black via-[#0f2e1f] to-[#003300] border-t border-green-800/30 text-green-300 py-4 text-center text-sm">
-        © {new Date().getFullYear()} KIIT Events. Built by Pranjal Agarwal.
-      </footer>
+      <Footer />
     </div>
   );
 }

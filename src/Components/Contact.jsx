@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { toast } from "react-toastify";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import Doodles from "./Doodles";
+import Spinner from "./Spinner";
 
 const Contact = () => {
   const [message, setMessage] = useState("");
-  const [status, setStatus] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [queries, setQueries] = useState([]);
   const token = localStorage.getItem("token");
 
@@ -24,7 +27,7 @@ const Contact = () => {
         console.info(`[INFO] Retrieved ${res.data.length} queries`);
       } catch (err) {
         console.error("[ERROR] Failed to fetch user queries:", err.message);
-        setStatus("❌ Failed to fetch queries");
+        toast.error("Failed to load your queries.");
       }
     };
 
@@ -35,11 +38,12 @@ const Contact = () => {
     e.preventDefault();
 
     if (!message.trim()) {
-      setStatus("⚠️ Please enter a valid query before submitting.");
+      toast.warn("Please enter a valid query before submitting.");
       return;
     }
 
     console.info("[INFO] Submitting new query...");
+    setSubmitting(true);
 
     try {
       await axios.post(
@@ -50,10 +54,9 @@ const Contact = () => {
         }
       );
 
-      setStatus("✅ Query submitted successfully!");
+      toast.success("Query submitted successfully!");
       setMessage("");
 
-      // Re-fetch updated queries
       const res = await axios.get(
         `${import.meta.env.VITE_BACKEND_URL}/api/queries/my`,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -62,77 +65,109 @@ const Contact = () => {
       console.info("[INFO] Query submitted and list refreshed.");
     } catch (err) {
       console.error("[ERROR] Failed to send query:", err.message);
-      setStatus("❌ Failed to send query. Try again later.");
+      toast.error("Failed to send query. Try again later.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
     <>
       <Navbar />
-      <div className="flex flex-col flex-grow mx-auto min-h-screen text-white px-6 py-16">
-        <div className="max-w-lg w-full bg-white/10 p-10 rounded-2xl shadow-2xl backdrop-blur-md border border-white/10">
-          <h2 className="text-3xl font-bold mb-6 text-center text-green-400">
-            Contact KIIT Events
-          </h2>
 
+      <div className="relative overflow-hidden">
+        <Doodles variant="hero" />
+
+        <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 py-16">
+          <div className="text-center mb-10">
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-[#111] tracking-tightish">
+              Contact{" "}
+              <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">
+                KIIT Events
+              </span>
+            </h2>
+            <p className="text-gray-500 mt-3 text-sm md:text-base">
+              Have a question, suggestion, or feedback? Send us a message.
+            </p>
+          </div>
+
+        <div className="bg-white border border-[#e5e5e5] rounded-2xl shadow-sm p-6 sm:p-8">
           {!token ? (
-            <p className="text-center text-red-400 font-medium">
+            <p className="text-center text-red-500 font-medium py-6">
               Please log in to send a query.
             </p>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <textarea
-                name="message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Write your query here..."
-                rows="5"
-                className="w-full bg-transparent border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/60"
-                required
-              />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Your Message
+                </label>
+                <textarea
+                  name="message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Write your query here..."
+                  rows="5"
+                  className="w-full bg-white border border-[#e5e5e5] rounded-lg px-4 py-3 text-[#111] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all resize-none"
+                  required
+                />
+              </div>
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-green-700 to-green-500 hover:from-green-600 hover:to-green-400 py-3 rounded-xl font-semibold shadow-lg transition-all"
+                disabled={submitting}
+                className="w-full sm:w-auto px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 disabled:bg-emerald-300 disabled:cursor-not-allowed text-white font-semibold shadow-sm transition-all flex items-center justify-center gap-2"
               >
-                Send Message
+                {submitting && <Spinner className="w-4 h-4" />}
+                {submitting ? "Sending…" : "Send Message"}
               </button>
             </form>
-          )}
-
-          {status && (
-            <p className="mt-6 text-center text-sm text-gray-300 italic">
-              {status}
-            </p>
           )}
         </div>
 
         {token && (
-          <div className="mt-10 max-w-2xl w-full">
-            <h3 className="text-2xl font-semibold mb-4 text-green-400">
+          <div className="mt-12">
+            <h3 className="text-xl md:text-2xl font-semibold text-[#111] mb-1">
               Your Queries & Replies
             </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Track every question you've sent and the replies from admins.
+            </p>
+
             {queries.length > 0 ? (
-              queries.map((q) => (
-                <div
-                  key={q._id}
-                  className="mb-4 bg-white/10 p-4 rounded-xl border border-white/10"
-                >
-                  <p className="text-gray-200">{q.message}</p>
-                  {q.reply ? (
-                    <p className="text-green-400 mt-2">
-                      <strong>Admin reply:</strong> {q.reply}
+              <div className="flex flex-col gap-4">
+                {queries.map((q) => (
+                  <div
+                    key={q._id}
+                    className="bg-white border border-[#e5e5e5] rounded-xl p-5 shadow-sm hover:shadow-md transition-all"
+                  >
+                    <p className="text-[#111] text-sm md:text-base">
+                      {q.message}
                     </p>
-                  ) : (
-                    <p className="text-gray-500 italic mt-2">No reply yet.</p>
-                  )}
-                </div>
-              ))
+                    {q.reply ? (
+                      <div className="mt-3 pt-3 border-t border-[#eee]">
+                        <p className="text-xs uppercase tracking-wider font-semibold text-emerald-600 mb-1">
+                          Admin Reply
+                        </p>
+                        <p className="text-gray-600 text-sm">{q.reply}</p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400 italic mt-3">
+                        No reply yet.
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
             ) : (
-              <p className="text-gray-400">No queries submitted yet.</p>
+              <p className="text-gray-500 text-center py-6">
+                No queries submitted yet.
+              </p>
             )}
           </div>
         )}
+        </div>
       </div>
+
       <Footer />
     </>
   );

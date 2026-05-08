@@ -2,6 +2,13 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
+import Footer from "./Footer";
+import {
+  optimizeBanner,
+  optimizeThumb,
+  optimizeAvatar,
+} from "../utils/imageOptimization";
+import Doodles from "./Doodles";
 
 export default function EventHighlights() {
   const { eventId } = useParams();
@@ -12,7 +19,6 @@ export default function EventHighlights() {
   const [eventTitle, setEventTitle] = useState("");
   const BACKEND = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
 
-  // --- USER ROLE ---
   const getUserRole = () => {
     try {
       const rawUser = localStorage.getItem("user");
@@ -41,7 +47,6 @@ export default function EventHighlights() {
 
   const isAdmin = getUserRole() === "admin";
 
-  // --- LOAD HIGHLIGHTS ---
   useEffect(() => {
     let mounted = true;
 
@@ -72,32 +77,54 @@ export default function EventHighlights() {
     return () => (mounted = false);
   }, [eventId, BACKEND]);
 
-  // reset index when highlight changes
   useEffect(() => setIndex(0), [highlight]);
+
+  const images = highlight?.gallery || [];
+
+  // Preload neighboring banner images so left/right arrows + thumbnail clicks
+  // resolve from the browser cache instead of a fresh network round-trip.
+  useEffect(() => {
+    if (images.length < 2) return;
+    const targets = [
+      images[(index + 1) % images.length],
+      images[(index - 1 + images.length) % images.length],
+    ];
+    targets.forEach((target) => {
+      if (target?.url) {
+        const img = new Image();
+        img.src = optimizeBanner(target.url);
+      }
+    });
+  }, [index, images]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        Loading highlight…
-      </div>
+      <>
+        <Navbar />
+        <div className="min-h-[60vh] flex items-center justify-center text-gray-500">
+          Loading highlight…
+        </div>
+      </>
     );
   }
 
   if (!highlight) {
     return (
-      <div className="min-h-screen bg-black text-white flex flex-col">
+      <>
         <Navbar />
-        <div className="flex justify-center items-center flex-grow px-4 py-12">
-          <div className="w-full max-w-xl bg-black/40 border border-green-800/30 rounded-2xl p-8 text-center">
-            <h2 className="text-3xl font-bold mb-3">No Highlights Yet</h2>
-            <p className="text-green-200/70 mb-6">
+        <div className="flex justify-center items-center px-4 py-16 min-h-[60vh]">
+          <div className="w-full max-w-xl bg-white border border-[#e5e5e5] rounded-2xl p-10 text-center shadow-sm">
+            <h2 className="font-display text-2xl md:text-3xl font-bold text-[#111] mb-2 tracking-tightish">
+              No Highlights Yet
+            </h2>
+            <p className="text-gray-500 mb-6">
               This event does not have any highlights yet.
             </p>
 
-            <div className="flex justify-center gap-3">
+            <div className="flex justify-center gap-3 flex-wrap">
               <button
                 onClick={() => navigate(-1)}
-                className="px-4 py-2 bg-black/40 border border-green-800 rounded-md text-green-200"
+                className="px-4 py-2.5 border border-[#e5e5e5] text-[#333] hover:bg-gray-50 rounded-lg text-sm font-medium transition-all"
               >
                 Back
               </button>
@@ -105,7 +132,7 @@ export default function EventHighlights() {
               {isAdmin && (
                 <button
                   onClick={() => navigate(`/CreateHighlights`)}
-                  className="px-4 py-2 bg-gradient-to-r from-green-700 to-emerald-600 rounded-md"
+                  className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white rounded-lg text-sm font-semibold shadow-sm transition-all"
                 >
                   Add Highlight
                 </button>
@@ -113,181 +140,265 @@ export default function EventHighlights() {
             </div>
           </div>
         </div>
-      </div>
+        <Footer />
+      </>
     );
   }
 
-  const images = highlight.gallery || [];
   const prev = () => setIndex((i) => (i - 1 + images.length) % images.length);
   const next = () => setIndex((i) => (i + 1) % images.length);
 
-  // -------------- FULLSCREEN UI BELOW --------------
+  const formattedDate = new Date(highlight.createdAt).toLocaleDateString(
+    undefined,
+    { year: "numeric", month: "long", day: "numeric" }
+  );
+
+  // Split paragraphs in long description on blank lines for nicer reading.
+  const paragraphs = (highlight.longDescription || "")
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      {/* HERO FULLSCREEN BANNER */}
-      <div className="relative w-full h-[60vh] sm:h-[70vh] overflow-hidden">
+      {/* HERO — kept as-is per request */}
+      <div className="relative w-full h-[55vh] sm:h-[65vh] overflow-hidden bg-[#f7faf8]">
         {images.length > 0 ? (
-          <img
-            src={images[index].url}
-            className="absolute inset-0 w-full h-full object-cover brightness-[0.45]"
-          />
+          <>
+            <img
+              key={index}
+              src={optimizeBanner(images[index].url)}
+              alt={highlight.title}
+              loading="eager"
+              className="absolute inset-0 w-full h-full object-cover animate-fadeIn"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+          </>
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-black via-[#001a0f] to-[#003319]" />
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle, #c2e0ce 1px, transparent 1px)",
+              backgroundSize: "30px 30px",
+              opacity: 0.4,
+            }}
+          />
         )}
 
-        {/* HERO TEXT */}
-        <div className="absolute bottom-10 left-10 max-w-4xl">
-          <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-green-300 to-emerald-300 bg-clip-text text-transparent drop-shadow-lg">
+        <div className="absolute bottom-8 left-6 sm:left-12 max-w-4xl text-white drop-shadow-lg">
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tightish">
             {highlight.title}
           </h1>
 
           {eventTitle && (
-            <p className="text-green-200/70 mt-2 text-lg">{eventTitle}</p>
+            <p className="text-white/80 mt-2 text-base sm:text-lg">
+              {eventTitle}
+            </p>
           )}
 
-          <p className="text-green-100/70 mt-3 max-w-2xl text-sm sm:text-base">
+          <p className="text-white/80 mt-3 max-w-2xl text-sm sm:text-base">
             {highlight.shortDescription}
           </p>
 
-          <div className="mt-5 flex gap-3">
+          <div className="mt-5 flex gap-3 flex-wrap">
             <button
               onClick={() => navigate(-1)}
-              className="px-5 py-2 bg-black/40 border border-green-800 text-green-200 rounded-md"
+              className="px-4 py-2 bg-white/95 hover:bg-white text-[#111] rounded-lg text-sm font-medium shadow-sm transition-all"
             >
-              Back
+              ← Back
             </button>
           </div>
         </div>
 
-        {/* CAROUSEL ARROWS */}
         {images.length > 1 && (
           <>
             <button
               onClick={prev}
-              className="absolute left-5 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full border border-green-800 hover:bg-black/60"
+              aria-label="Previous image"
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-[#111] w-10 h-10 rounded-full shadow-md flex items-center justify-center text-xl"
             >
               ‹
             </button>
             <button
               onClick={next}
-              className="absolute right-5 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full border border-green-800 hover:bg-black/60"
+              aria-label="Next image"
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-[#111] w-10 h-10 rounded-full shadow-md flex items-center justify-center text-xl"
             >
               ›
             </button>
+
+            {/* Image counter */}
+            <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full">
+              {index + 1} / {images.length}
+            </div>
           </>
         )}
       </div>
 
-      {/* THUMBNAIL STRIP */}
+      {/* THUMBNAILS — kept as-is per request */}
       {images.length > 0 && (
-        <div className="w-full bg-[#071008] py-3 px-4 overflow-x-auto flex gap-3 border-b border-green-800/20">
+        <div className="w-full bg-white py-3 px-4 overflow-x-auto flex gap-3 border-b border-[#e5e5e5]">
           {images.map((img, i) => (
             <button
               key={i}
               onClick={() => setIndex(i)}
-              className={`rounded-md overflow-hidden border ${
-                index === i ? "border-emerald-400" : "border-green-800/40"
+              aria-label={`View image ${i + 1}`}
+              className={`rounded-md overflow-hidden border-2 flex-shrink-0 transition-all ${
+                index === i
+                  ? "border-emerald-500 shadow-sm"
+                  : "border-transparent hover:border-emerald-200"
               }`}
             >
               <img
-                src={img.url}
-                className="h-16 w-24 sm:h-20 sm:w-32 object-cover"
+                src={optimizeThumb(img.url)}
+                alt=""
+                loading="lazy"
+                className={`h-16 w-24 sm:h-20 sm:w-32 object-cover transition-opacity ${
+                  index === i ? "opacity-100" : "opacity-70 hover:opacity-100"
+                }`}
               />
             </button>
           ))}
         </div>
       )}
 
-      {/* MAIN CONTENT */}
-      <div className="flex flex-col gap-16 py-16 px-6 sm:px-12 lg:px-24 bg-gradient-to-b from-black via-[#00170d] to-[#001f11]">
-        {/* FEATURED + DATE */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold">{highlight.title}</h2>
-            <p className="text-green-300/70 mt-1">
-              {highlight.shortDescription}
-            </p>
+      {/* ── BODY ─────────────────────────────────────────────── */}
+      <div className="relative flex-1 overflow-hidden flex flex-col">
+        <Doodles variant="hero" />
+
+        <article className="relative z-10 max-w-3xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+        {/* META STRIP */}
+        <div className="flex items-center justify-between gap-4 pb-6 border-b border-[#e5e5e5] mb-12 flex-wrap">
+          <div className="flex items-center gap-2.5 text-sm flex-wrap">
+            {eventTitle && (
+              <>
+                <span className="font-semibold text-[#111]">{eventTitle}</span>
+                <span className="text-gray-300">•</span>
+              </>
+            )}
+            <span className="text-gray-500">{formattedDate}</span>
           </div>
 
-          <div className="text-right">
-            {highlight.featured && (
-              <span className="px-3 py-1 bg-emerald-600/20 text-emerald-300 rounded-md text-sm">
-                Featured
-              </span>
-            )}
-            <p className="text-xs text-green-300 mt-1">
-              {new Date(highlight.createdAt).toLocaleDateString()}
-            </p>
-          </div>
+          {highlight.featured && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-md text-xs font-semibold uppercase tracking-wider">
+              <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.366 2.446a1 1 0 00-.364 1.118l1.287 3.957c.3.921-.755 1.688-1.54 1.118L10 14.347l-3.367 2.446c-.784.57-1.838-.197-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.65 8.154c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.957z" />
+              </svg>
+              Featured
+            </span>
+          )}
         </div>
 
-        {/* LONG DESCRIPTION */}
-        {highlight.longDescription && (
-          <section>
-            <h3 className="text-2xl font-semibold mb-3">What Happened</h3>
-            <p className="text-green-200/80 leading-relaxed text-lg max-w-4xl">
-              {highlight.longDescription}
-            </p>
+        {/* WHAT HAPPENED */}
+        {paragraphs.length > 0 && (
+          <section className="mb-14">
+            <SectionHeading>What Happened</SectionHeading>
+            <div className="text-gray-700 text-base sm:text-lg leading-[1.75] space-y-5">
+              {paragraphs.map((para, i) => (
+                <p key={i}>
+                  {i === 0 ? (
+                    <>
+                      <span className="float-left font-display text-5xl sm:text-6xl font-bold text-emerald-500 leading-none mr-2 mt-1">
+                        {para.charAt(0)}
+                      </span>
+                      {para.slice(1)}
+                    </>
+                  ) : (
+                    para
+                  )}
+                </p>
+              ))}
+            </div>
           </section>
         )}
 
         {/* KEY MOMENTS */}
         {highlight.keyHighlights?.length > 0 && (
-          <section>
-            <h3 className="text-2xl font-semibold mb-3">Key Moments</h3>
-            <ul className="list-disc pl-5 text-green-200/90 space-y-2 text-lg">
+          <section className="mb-14">
+            <SectionHeading>Key Moments</SectionHeading>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {highlight.keyHighlights.map((k, i) => (
-                <li key={i}>{k}</li>
+                <div
+                  key={i}
+                  className="relative bg-white border border-[#e5e5e5] rounded-xl p-5 pr-16 hover:border-emerald-200 hover:shadow-md transition-all overflow-hidden"
+                >
+                  <span
+                    className="font-display absolute -top-2 -right-1 text-[5rem] font-extrabold leading-none select-none pointer-events-none"
+                    style={{ color: "rgba(16, 185, 129, 0.12)" }}
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <p className="relative text-gray-700 text-base leading-relaxed">
+                    {k}
+                  </p>
+                </div>
               ))}
-            </ul>
+            </div>
           </section>
         )}
 
         {/* GUESTS */}
         {highlight.guests?.length > 0 && (
           <section>
-            <h3 className="text-2xl font-semibold mb-5">Guests</h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <SectionHeading>Guests</SectionHeading>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {highlight.guests.map((g, i) => (
                 <div
                   key={i}
-                  className="bg-[#0c1711] p-5 rounded-xl border border-green-800/30 hover:border-green-500/40 transition shadow-md"
+                  className="flex gap-4 bg-white border border-[#e5e5e5] rounded-xl p-5 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all"
                 >
                   {g.photo?.url ? (
                     <img
-                      src={g.photo.url}
-                      className="h-32 w-32 object-cover rounded-full mx-auto"
+                      src={optimizeAvatar(g.photo.url)}
+                      alt={g.name}
+                      loading="lazy"
+                      className="h-20 w-20 sm:h-24 sm:w-24 object-cover rounded-full border border-[#e5e5e5] flex-shrink-0"
                     />
                   ) : (
-                    <div className="h-32 w-32 bg-black/40 rounded-full mx-auto flex items-center justify-center text-green-300">
+                    <div className="h-20 w-20 sm:h-24 sm:w-24 bg-[#f7faf8] border border-[#e5e5e5] rounded-full flex items-center justify-center text-gray-400 text-xs flex-shrink-0">
                       No Photo
                     </div>
                   )}
 
-                  <h4 className="text-xl font-semibold mt-4 text-center">
-                    {g.name}
-                  </h4>
-                  <p className="text-green-200/80 text-center">{g.title}</p>
-
-                  {g.bio && (
-                    <p className="text-green-200/70 mt-2 text-sm leading-relaxed text-center">
-                      {g.bio}
-                    </p>
-                  )}
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-display text-lg font-semibold text-[#111] tracking-tightish leading-tight">
+                      {g.name}
+                    </h4>
+                    {g.title && (
+                      <p className="text-emerald-600 text-sm font-medium mt-0.5">
+                        {g.title}
+                      </p>
+                    )}
+                    {g.bio && (
+                      <p className="text-gray-500 text-sm mt-2 leading-relaxed line-clamp-4">
+                        {g.bio}
+                      </p>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           </section>
         )}
+        </article>
       </div>
 
-      {/* FOOTER */}
-      <footer className="w-full bg-[#00150d] border-t border-green-800/30 text-green-300 py-4 text-center text-sm">
-        © {new Date().getFullYear()} KIIT Events. Built by Pranjal Agarwal.
-      </footer>
+      <Footer />
+    </div>
+  );
+}
+
+// Section heading with a thin emerald rule that fills the rest of the row.
+function SectionHeading({ children }) {
+  return (
+    <div className="flex items-center gap-4 mb-6">
+      <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#111] tracking-tightish whitespace-nowrap">
+        {children}
+      </h2>
+      <span className="flex-1 h-px bg-gradient-to-r from-emerald-200 via-[#e5e5e5] to-transparent" />
     </div>
   );
 }
