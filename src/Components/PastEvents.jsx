@@ -5,6 +5,8 @@ import Footer from "./Footer";
 import { optimizeCard } from "../utils/imageOptimization";
 import { formatEventDateTime } from "../utils/formatDate";
 import Doodles from "./Doodles";
+import { SkeletonGrid } from "./Skeleton";
+import EmptyState, { CalendarIcon } from "./EmptyState";
 
 export default function PastEvents() {
   const [events, setEvents] = useState([]);
@@ -31,7 +33,18 @@ export default function PastEvents() {
     return (
       <>
         <Navbar />
-        <p className="text-gray-500 text-center mt-10">Loading...</p>
+        <div className="min-h-screen flex flex-col">
+          <div className="relative flex-grow overflow-hidden flex flex-col">
+            <Doodles variant="hero" />
+            <div className="relative z-10 flex-grow max-w-6xl mx-auto w-full px-4 sm:px-6 py-12">
+              <div className="space-y-3 text-center mb-10">
+                <div className="h-8 w-64 bg-[#f0f0eb] rounded animate-pulse mx-auto" />
+                <div className="h-3 w-96 bg-[#f0f0eb] rounded animate-pulse mx-auto" />
+              </div>
+              <SkeletonGrid count={6} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" />
+            </div>
+          </div>
+        </div>
       </>
     );
 
@@ -58,12 +71,11 @@ export default function PastEvents() {
             </div>
 
           {events.length === 0 ? (
-            <div className="bg-white border border-dashed border-[#e5e5e5] rounded-2xl p-12 text-center">
-              <p className="text-xl font-semibold text-[#111] mb-1">
-                No past events yet.
-              </p>
-              <p className="text-gray-500">Check back soon for highlights.</p>
-            </div>
+            <EmptyState
+              icon={<CalendarIcon />}
+              title="No past events yet"
+              description="Once events wrap up, their highlights will show up here."
+            />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {events.map((event) => (

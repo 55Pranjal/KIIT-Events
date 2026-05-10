@@ -4,6 +4,7 @@ import axios from "axios";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Doodles from "./Doodles";
+import { SkeletonDetail } from "./Skeleton";
 import { optimizeHero } from "../utils/imageOptimization";
 import { formatEventDate, formatEventTime } from "../utils/formatDate";
 
@@ -64,7 +65,12 @@ const EventDetails = () => {
     return (
       <>
         <Navbar />
-        <p className="text-center mt-10 text-gray-500">Loading...</p>
+        <div className="relative min-h-screen overflow-hidden">
+          <Doodles variant="hero" />
+          <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-10">
+            <SkeletonDetail />
+          </div>
+        </div>
       </>
     );
   if (!event)

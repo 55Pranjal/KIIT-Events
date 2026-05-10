@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { optimizeCard } from "../utils/imageOptimization";
 import { formatEventDateTime } from "../utils/formatDate";
 import Doodles from "./Doodles";
+import { SkeletonGrid } from "./Skeleton";
+import EmptyState, { CalendarIcon } from "./EmptyState";
 
 const UpcomingEvents = () => {
   const navigate = useNavigate();
@@ -33,10 +35,19 @@ const UpcomingEvents = () => {
 
   if (loading)
     return (
-      <>
+      <div className="flex flex-col min-h-screen">
         <Navbar />
-        <p className="text-gray-500 text-center mt-10">Loading...</p>
-      </>
+        <div className="relative flex-grow overflow-hidden flex flex-col">
+          <Doodles variant="hero" />
+          <main className="relative z-10 flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 py-10">
+            <div className="space-y-3 mb-10 text-center">
+              <div className="h-8 w-72 bg-[#f0f0eb] rounded animate-pulse mx-auto" />
+              <div className="h-3 w-96 bg-[#f0f0eb] rounded animate-pulse mx-auto" />
+            </div>
+            <SkeletonGrid count={6} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" />
+          </main>
+        </div>
+      </div>
     );
   if (error)
     return (
@@ -68,25 +79,24 @@ const UpcomingEvents = () => {
         </div>
 
         {events.length === 0 ? (
-          <div className="bg-white border border-dashed border-[#e5e5e5] rounded-2xl p-12 text-center">
-            <p className="text-xl sm:text-2xl font-semibold text-[#111] mb-2">
-              No upcoming events right now.
-            </p>
-            <p className="text-gray-500 mb-6">
-              Check back soon, or browse other events below.
-            </p>
-            <div className="flex flex-wrap justify-center gap-3">
-              <button
-                onClick={() => navigate("/PastEvents")}
-                className={outlineBtn}
-              >
-                View Past Events
-              </button>
-              <button onClick={() => navigate("/")} className={outlineBtn}>
-                View Ongoing Events
-              </button>
-            </div>
-          </div>
+          <EmptyState
+            icon={<CalendarIcon />}
+            title="No upcoming events right now"
+            description="Check back soon — new events drop all the time."
+            action={
+              <>
+                <button
+                  onClick={() => navigate("/PastEvents")}
+                  className={outlineBtn}
+                >
+                  View Past Events
+                </button>
+                <button onClick={() => navigate("/")} className={outlineBtn}>
+                  View Ongoing Events
+                </button>
+              </>
+            }
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map((event) => (

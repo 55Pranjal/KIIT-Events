@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Doodles from "./Doodles";
+import EmptyState, { InboxIcon } from "./EmptyState";
 
 const RequestsPage = () => {
   const [requests, setRequests] = useState([]);
@@ -78,9 +79,11 @@ const RequestsPage = () => {
         </div>
 
         {requests.length === 0 ? (
-          <div className="bg-white border border-dashed border-[#e5e5e5] rounded-xl p-10 text-center">
-            <p className="text-gray-500">No pending requests.</p>
-          </div>
+          <EmptyState
+            icon={<InboxIcon />}
+            title="No pending requests"
+            description="Society applications waiting for review will appear here."
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {requests.map((req) => (

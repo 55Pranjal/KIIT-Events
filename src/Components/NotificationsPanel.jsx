@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Doodles from "./Doodles";
+import EmptyState, { BellIcon } from "./EmptyState";
 import { useNavigate } from "react-router-dom";
 
 const NotificationsPanel = () => {
@@ -90,9 +91,11 @@ const NotificationsPanel = () => {
 
           <div className="overflow-y-auto max-h-[60vh]">
             {notifications.length === 0 ? (
-              <div className="bg-[#f7faf8] border border-dashed border-[#eeeeea] rounded-xl p-10 text-center">
-                <p className="text-gray-500">No notifications yet.</p>
-              </div>
+              <EmptyState
+                icon={<BellIcon />}
+                title="You're all caught up"
+                description="When someone replies to your queries or new events get posted, you'll see them here."
+              />
             ) : (
               <ul className="space-y-2.5">
                 {notifications.map((n) => (

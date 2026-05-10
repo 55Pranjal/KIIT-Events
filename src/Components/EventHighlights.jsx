@@ -9,6 +9,7 @@ import {
   optimizeAvatar,
 } from "../utils/imageOptimization";
 import Doodles from "./Doodles";
+import { SkeletonLine, SkeletonText } from "./Skeleton";
 
 export default function EventHighlights() {
   const { eventId } = useParams();
@@ -99,12 +100,38 @@ export default function EventHighlights() {
 
   if (loading) {
     return (
-      <>
+      <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="min-h-[60vh] flex items-center justify-center text-gray-500">
-          Loading highlight…
+        {/* Hero skeleton */}
+        <div className="relative w-full h-[55vh] sm:h-[65vh] bg-[#f0f0eb] animate-pulse" />
+        {/* Thumb strip skeleton */}
+        <div className="w-full bg-white py-3 px-4 flex gap-3 border-b border-[#e5e5e5]">
+          {[0, 1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-16 w-24 sm:h-20 sm:w-32 bg-[#f0f0eb] rounded-md animate-pulse flex-shrink-0"
+            />
+          ))}
         </div>
-      </>
+        {/* Body skeleton */}
+        <div className="relative flex-1 overflow-hidden flex flex-col">
+          <Doodles variant="hero" />
+          <article className="relative z-10 max-w-3xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16 space-y-10">
+            <div className="flex items-center justify-between gap-4 pb-6 border-b border-[#e5e5e5]">
+              <SkeletonLine width="w-48" height="h-4" />
+              <SkeletonLine width="w-20" height="h-5" />
+            </div>
+            <div className="space-y-3">
+              <SkeletonLine width="w-40" height="h-6" />
+              <SkeletonText lines={4} />
+            </div>
+            <div className="space-y-3">
+              <SkeletonLine width="w-40" height="h-6" />
+              <SkeletonText lines={3} />
+            </div>
+          </article>
+        </div>
+      </div>
     );
   }
 

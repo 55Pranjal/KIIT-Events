@@ -3,6 +3,7 @@ import axios from "axios";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Doodles from "./Doodles";
+import EmptyState, { MegaphoneIcon } from "./EmptyState";
 
 export default function AnnouncementsList() {
   const [announcements, setAnnouncements] = useState([]);
@@ -62,9 +63,11 @@ export default function AnnouncementsList() {
             <p className="text-center text-red-500 font-medium py-8">{error}</p>
           )}
           {!loading && !error && announcements.length === 0 && (
-            <div className="bg-white border border-dashed border-[#e5e5e5] rounded-xl p-10 text-center">
-              <p className="text-gray-500">No announcements available.</p>
-            </div>
+            <EmptyState
+              icon={<MegaphoneIcon />}
+              title="No announcements yet"
+              description="Society updates will appear here as soon as they're posted."
+            />
           )}
 
           <div className="flex flex-col gap-4">

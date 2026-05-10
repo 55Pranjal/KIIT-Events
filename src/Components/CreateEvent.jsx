@@ -312,6 +312,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import UploadPoster from "./UploadPoster"; // <-- imported
+import FormSection from "./FormSection";
 import { optimizeCard } from "../utils/imageOptimization";
 
 const CreateEvent = () => {
@@ -609,77 +610,117 @@ const CreateEvent = () => {
             Fill in the details below — date must be within the next 2 months.
           </p>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {[
-              {
-                type: "text",
-                placeholder: "Event Title",
-                value: title,
-                onChange: setTitle,
-              },
-              {
-                type: "date",
-                placeholder: "Date",
-                value: date,
-                onChange: (value) => {
-                  setDate(value);
-                  validateDate(value);
-                },
-              },
-              {
-                type: "time",
-                placeholder: "Time",
-                value: time,
-                onChange: setTime,
-              },
-              {
-                type: "text",
-                placeholder: "Location",
-                value: location,
-                onChange: setLocation,
-              },
-              {
-                type: "text",
-                placeholder: "Guest",
-                value: guest,
-                onChange: setGuest,
-              },
-            ].map((input, idx) => (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+            {/* ── BASICS ─────────────────────────── */}
+            <FormSection
+              title="Basics"
+              description="The headline info attendees will see first."
+            >
               <input
-                key={idx}
-                type={input.type}
-                placeholder={input.placeholder}
+                type="text"
+                placeholder="Event title"
                 required
-                value={input.value}
-                onChange={(e) => input.onChange(e.target.value)}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 className={inputClass}
               />
-            ))}
+              <textarea
+                placeholder="Description — what is this event about?"
+                required
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+                className={`${inputClass} resize-none`}
+              />
+            </FormSection>
 
-            <textarea
-              placeholder="Description"
-              required
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
-              className={`${inputClass} resize-none`}
-            />
-
-            <select
-              required
-              value={registrationStatus}
-              onChange={(e) => setRegistrationStatus(e.target.value)}
-              className={selectClass}
+            {/* ── SCHEDULE ───────────────────────── */}
+            <FormSection
+              title="Schedule"
+              description="When the event is happening. Date must be within the next 2 months."
             >
-              <option value="" disabled>
-                Registration Status
-              </option>
-              <option value="open">Open</option>
-              <option value="closed">Closed</option>
-              <option value="upcoming">Upcoming</option>
-            </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input
+                  type="date"
+                  required
+                  value={date}
+                  onChange={(e) => {
+                    setDate(e.target.value);
+                    validateDate(e.target.value);
+                  }}
+                  className={inputClass}
+                />
+                <input
+                  type="time"
+                  required
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              <select
+                required
+                value={registrationStatus}
+                onChange={(e) => setRegistrationStatus(e.target.value)}
+                className={selectClass}
+              >
+                <option value="" disabled>
+                  Registration status
+                </option>
+                <option value="open">Open</option>
+                <option value="closed">Closed</option>
+                <option value="upcoming">Upcoming</option>
+              </select>
+            </FormSection>
 
-            <div className="w-full">
+            {/* ── WHERE & WHO ────────────────────── */}
+            <FormSection
+              title="Where & who"
+              description="Location, hosting society, and category."
+            >
+              <input
+                type="text"
+                placeholder="Location"
+                required
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className={inputClass}
+              />
+              <input
+                type="text"
+                placeholder="Guest (speaker, performer, …)"
+                required
+                value={guest}
+                onChange={(e) => setGuest(e.target.value)}
+                className={inputClass}
+              />
+
+              {loadingSocieties ? (
+                <div className="rounded-lg p-3 bg-[#f7faf8] border border-[#eeeeea] text-gray-500 w-full text-sm">
+                  Loading societies...
+                </div>
+              ) : societiesError ? (
+                <div className="rounded-lg p-3 bg-red-50 border border-red-200 text-red-600 w-full text-sm">
+                  {societiesError}
+                </div>
+              ) : (
+                <select
+                  required
+                  value={societyId}
+                  onChange={(e) => setSocietyId(e.target.value)}
+                  className={selectClass}
+                >
+                  <option value="" disabled>
+                    Hosting society
+                  </option>
+                  {societies.map((soc) => (
+                    <option key={soc._id} value={soc._id}>
+                      {soc.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
               <select
                 required
                 value={eventCategory}
@@ -687,7 +728,7 @@ const CreateEvent = () => {
                 className={selectClass}
               >
                 <option value="" disabled>
-                  Event Category
+                  Event category
                 </option>
                 <option value="Music">Music</option>
                 <option value="Dance">Dance</option>
@@ -701,43 +742,17 @@ const CreateEvent = () => {
                   placeholder="Enter custom category"
                   value={customCategory}
                   onChange={(e) => setCustomCategory(e.target.value)}
-                  className={`${inputClass} mt-3`}
+                  className={inputClass}
                   required
                 />
               )}
-            </div>
+            </FormSection>
 
-            {loadingSocieties ? (
-              <div className="rounded-lg p-3 bg-[#f7faf8] border border-[#eeeeea] text-gray-500 w-full text-sm">
-                Loading societies...
-              </div>
-            ) : societiesError ? (
-              <div className="rounded-lg p-3 bg-red-50 border border-red-200 text-red-600 w-full text-sm">
-                {societiesError}
-              </div>
-            ) : (
-              <select
-                required
-                value={societyId}
-                onChange={(e) => setSocietyId(e.target.value)}
-                className={selectClass}
-              >
-                <option value="" disabled>
-                  Select Society
-                </option>
-                {societies.map((soc) => (
-                  <option key={soc._id} value={soc._id}>
-                    {soc.name}
-                  </option>
-                ))}
-              </select>
-            )}
-
-            <div className="w-full mt-2">
-              <label className="block mb-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Poster
-              </label>
-
+            {/* ── MEDIA ──────────────────────────── */}
+            <FormSection
+              title="Media"
+              description="A poster image makes your event stand out in listings."
+            >
               <UploadPoster
                 onUploaded={(url) => {
                   console.info(
@@ -750,9 +765,8 @@ const CreateEvent = () => {
                 initialPreviewUrl={coverImageURL}
               />
 
-              <p className="text-xs text-gray-400 mt-2 mb-1">
-                Or paste an image URL (optional) — this will be normalized on
-                submit.
+              <p className="text-xs text-gray-400 -mt-1">
+                Or paste an image URL — it will be normalized on submit.
               </p>
               <input
                 type="text"
@@ -763,7 +777,7 @@ const CreateEvent = () => {
               />
 
               {coverImageURL && (
-                <div className="mt-3 flex justify-center">
+                <div className="mt-2 flex justify-center">
                   <img
                     src={optimizeCard(resolveImageUrl(coverImageURL))}
                     alt="poster preview"
@@ -775,12 +789,12 @@ const CreateEvent = () => {
                   />
                 </div>
               )}
-            </div>
+            </FormSection>
 
             <button
               type="submit"
               disabled={submitting}
-              className="mt-3 font-semibold bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 disabled:bg-emerald-300 disabled:cursor-not-allowed text-white rounded-lg py-3 w-full sm:w-1/2 mx-auto shadow-sm transition-all flex items-center justify-center gap-2"
+              className="mt-2 font-semibold bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 disabled:bg-emerald-300 disabled:cursor-not-allowed text-white rounded-lg py-3 w-full sm:w-1/2 mx-auto shadow-sm transition-all flex items-center justify-center gap-2"
             >
               {submitting && <Spinner className="w-4 h-4" />}
               {submitting ? "Creating…" : "Create Event"}

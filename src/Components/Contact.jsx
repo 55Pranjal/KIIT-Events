@@ -5,6 +5,7 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Doodles from "./Doodles";
 import Spinner from "./Spinner";
+import EmptyState, { ChatIcon } from "./EmptyState";
 
 const Contact = () => {
   const [message, setMessage] = useState("");
@@ -159,9 +160,11 @@ const Contact = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-6">
-                No queries submitted yet.
-              </p>
+              <EmptyState
+                icon={<ChatIcon />}
+                title="No queries yet"
+                description="Anything you send via the form above will appear here, along with any admin replies."
+              />
             )}
           </div>
         )}
