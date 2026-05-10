@@ -4,6 +4,8 @@ import Navbar from "./Navbar";
 import { useNavigate } from "react-router-dom";
 import Footer from "./Footer";
 import Doodles from "./Doodles";
+import { SkeletonProfileCard, SkeletonGrid } from "./Skeleton";
+import EmptyState, { CalendarIcon } from "./EmptyState";
 import { optimizeCard } from "../utils/imageOptimization";
 import { formatEventDateTime } from "../utils/formatDate";
 
@@ -79,10 +81,22 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <>
+      <div className="min-h-screen flex flex-col">
         <Navbar />
-        <p className="text-gray-500 text-center mt-10 px-4">Loading...</p>
-      </>
+        <div className="relative flex-grow overflow-hidden flex flex-col">
+          <Doodles variant="hero" />
+          <main className="relative z-10 flex-grow max-w-6xl mx-auto w-full px-4 sm:px-6 py-10">
+            <SkeletonProfileCard />
+            <div className="mt-12">
+              <div className="mb-6 space-y-2">
+                <div className="h-6 w-56 bg-[#f0f0eb] rounded animate-pulse" />
+                <div className="h-3 w-72 bg-[#f0f0eb] rounded animate-pulse" />
+              </div>
+              <SkeletonGrid count={6} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" />
+            </div>
+          </main>
+        </div>
+      </div>
     );
   }
 
@@ -231,13 +245,36 @@ const Dashboard = () => {
           </div>
 
           {events.length === 0 ? (
-            <div className="bg-white border border-dashed border-[#e5e5e5] rounded-xl p-10 text-center">
-              <p className="text-gray-500">
-                {user.role === "student"
-                  ? "You haven't registered for any events yet."
-                  : "You haven't created any events yet."}
-              </p>
-            </div>
+            <EmptyState
+              icon={<CalendarIcon />}
+              title={
+                user.role === "student"
+                  ? "No registrations yet"
+                  : "No events created yet"
+              }
+              description={
+                user.role === "student"
+                  ? "Browse upcoming events and register in one tap."
+                  : "Create your first event so students can register."
+              }
+              action={
+                user.role === "student" ? (
+                  <button
+                    onClick={() => navigate("/EventsPage")}
+                    className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white rounded-lg text-sm font-semibold shadow-sm transition"
+                  >
+                    Browse events
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => navigate("/CreateEvent")}
+                    className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white rounded-lg text-sm font-semibold shadow-sm transition"
+                  >
+                    Create your first event
+                  </button>
+                )
+              }
+            />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {events.map((event) => (

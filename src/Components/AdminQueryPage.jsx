@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Doodles from "./Doodles";
+import EmptyState, { ChatIcon } from "./EmptyState";
 
 const AdminQueries = () => {
   const [queries, setQueries] = useState([]);
@@ -92,9 +93,11 @@ const AdminQueries = () => {
         </div>
 
         {queries.length === 0 ? (
-          <div className="bg-white border border-dashed border-[#e5e5e5] rounded-xl p-10 text-center">
-            <p className="text-gray-500">No queries found.</p>
-          </div>
+          <EmptyState
+            icon={<ChatIcon />}
+            title="No queries to review"
+            description="When students send in questions, they'll show up here for you to reply to."
+          />
         ) : (
           <div className="space-y-4">
             {queries.map((q) => (

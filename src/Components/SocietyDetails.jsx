@@ -4,6 +4,8 @@ import { toast } from "react-toastify";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Doodles from "./Doodles";
+import ConfirmDialog from "./ConfirmDialog";
+import EmptyState, { UsersIcon } from "./EmptyState";
 import { useNavigate } from "react-router-dom";
 
 const SocietyDetails = () => {
@@ -17,6 +19,7 @@ const SocietyDetails = () => {
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const BACKEND = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
 
@@ -80,20 +83,15 @@ const SocietyDetails = () => {
     clearSelection();
   };
 
-  const confirmDelete = async () => {
+  const requestDelete = () => {
     if (selectedIds.size === 0) {
       setDeleteError("No societies selected for deletion.");
       return;
     }
+    setConfirmOpen(true);
+  };
 
-    if (
-      !window.confirm(
-        `Delete ${selectedIds.size} societies? This action cannot be undone.`
-      )
-    ) {
-      return;
-    }
-
+  const confirmDelete = async () => {
     setDeleting(true);
     setDeleteError("");
     try {
@@ -111,6 +109,7 @@ const SocietyDetails = () => {
       );
       clearSelection();
       setDeleteMode(false);
+      setConfirmOpen(false);
       console.info(`[SocietyDetails] deleted ${deletedCount} societies`, ids);
       toast.success(
         `Deleted ${deletedCount} ${deletedCount === 1 ? "society" : "societies"}.`
@@ -243,9 +242,29 @@ const SocietyDetails = () => {
         ) : error ? (
           <div className="text-center py-12 text-red-500">{error}</div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white border border-dashed border-[#e5e5e5] rounded-xl p-10 text-center">
-            <p className="text-gray-500">No approved societies found.</p>
-          </div>
+          <EmptyState
+            icon={<UsersIcon />}
+            title={
+              searchTerm
+                ? "No societies match your search"
+                : "No approved societies yet"
+            }
+            description={
+              searchTerm
+                ? "Try a different name or clear the search."
+                : "Approved societies will appear here. Check the Requests tab for pending applications."
+            }
+            action={
+              searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="px-5 py-2.5 border border-[#e5e5e5] hover:bg-gray-50 text-[#333] rounded-lg text-sm font-medium transition"
+                >
+                  Clear search
+                </button>
+              )
+            }
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {filtered.map((s) => (
@@ -327,7 +346,7 @@ const SocietyDetails = () => {
           </div>
 
           <button
-            onClick={confirmDelete}
+            onClick={requestDelete}
             disabled={deleting || selectedCount === 0}
             className={`text-sm font-medium rounded-lg px-4 py-2 transition-all ${
               selectedCount === 0
@@ -335,7 +354,7 @@ const SocietyDetails = () => {
                 : "bg-red-500 text-white hover:bg-red-600 shadow-sm"
             }`}
           >
-            {deleting ? "Deleting…" : `Confirm Delete (${selectedCount})`}
+            {deleting ? "Deleting…" : `Delete (${selectedCount})`}
           </button>
 
           <button
@@ -351,6 +370,17 @@ const SocietyDetails = () => {
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title={`Delete ${selectedCount} ${selectedCount === 1 ? "society" : "societies"}?`}
+        description="This will permanently remove the selected societies and detach their associated data. This action cannot be undone."
+        confirmLabel={`Delete ${selectedCount}`}
+        destructive
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmOpen(false)}
+      />
 
       <Footer />
     </div>

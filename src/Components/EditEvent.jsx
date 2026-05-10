@@ -6,6 +6,7 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Doodles from "./Doodles";
 import Spinner from "./Spinner";
+import ConfirmDialog from "./ConfirmDialog";
 
 const EditEvent = () => {
   const { eventId } = useParams();
@@ -15,6 +16,7 @@ const EditEvent = () => {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -69,7 +71,6 @@ const EditEvent = () => {
   };
 
   const handleRemove = async () => {
-    if (!window.confirm("Are you sure you want to remove this event?")) return;
     setRemoving(true);
     try {
       const token = localStorage.getItem("token");
@@ -79,6 +80,7 @@ const EditEvent = () => {
       );
 
       toast.success("Event removed.");
+      setConfirmOpen(false);
       navigate("/dashboard");
     } catch (err) {
       console.error("[EditEvent] Error removing event:", err);
@@ -232,7 +234,7 @@ const EditEvent = () => {
 
               <button
                 type="button"
-                onClick={handleRemove}
+                onClick={() => setConfirmOpen(true)}
                 disabled={submitting || removing}
                 className="flex-1 py-3 border border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 disabled:opacity-60 disabled:cursor-not-allowed rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
               >
@@ -244,6 +246,17 @@ const EditEvent = () => {
         </form>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Remove this event?"
+        description="This will permanently delete the event and all its registrations. This action cannot be undone."
+        confirmLabel="Remove event"
+        destructive
+        loading={removing}
+        onConfirm={handleRemove}
+        onCancel={() => setConfirmOpen(false)}
+      />
 
       <Footer />
     </>

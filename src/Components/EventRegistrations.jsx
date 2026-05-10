@@ -4,6 +4,7 @@ import axios from "axios";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Doodles from "./Doodles";
+import EmptyState, { UsersIcon } from "./EmptyState";
 
 const EventRegistrations = () => {
   const { eventId } = useParams();
@@ -93,9 +94,29 @@ const EventRegistrations = () => {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="bg-white border border-dashed border-[#e5e5e5] rounded-xl p-10 text-center">
-            <p className="text-gray-500">No students found.</p>
-          </div>
+          <EmptyState
+            icon={<UsersIcon />}
+            title={
+              search
+                ? "No students match that name"
+                : "No registrations yet"
+            }
+            description={
+              search
+                ? "Try a different search term."
+                : "Once students start registering for this event, they'll appear here."
+            }
+            action={
+              search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="px-5 py-2.5 border border-[#e5e5e5] hover:bg-gray-50 text-[#333] rounded-lg text-sm font-medium transition"
+                >
+                  Clear search
+                </button>
+              )
+            }
+          />
         ) : (
           <ul className="space-y-2.5">
             {filtered.map((reg) => (

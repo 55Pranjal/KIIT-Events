@@ -7,6 +7,7 @@ import Footer from "./Footer";
 import Doodles from "./Doodles";
 import Spinner from "./Spinner";
 import UploadPoster from "./UploadPoster";
+import FormSection from "./FormSection";
 import { optimizeThumb, optimizeAvatar } from "../utils/imageOptimization";
 
 const MAX_FILES = 8;
@@ -270,10 +271,12 @@ export default function CreateHighlight() {
             Showcase what happened at an event with photos and stories.
           </p>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-            {/* EVENT SELECT */}
-            <div className="space-y-1.5">
-              <label className={sectionLabel}>Event</label>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+            {/* ── EVENT ──────────────────────────── */}
+            <FormSection
+              title="Event"
+              description="Which event is this highlight for?"
+            >
               <select
                 required
                 value={eventId}
@@ -286,57 +289,55 @@ export default function CreateHighlight() {
                   </option>
                 ))}
               </select>
-            </div>
+            </FormSection>
 
-            {/* TITLE */}
-            <div className="space-y-1.5">
-              <label className={sectionLabel}>Title</label>
+            {/* ── STORY ──────────────────────────── */}
+            <FormSection
+              title="Story"
+              description="The headline summary and the long-form recap."
+            >
               <input
                 type="text"
-                placeholder="Highlight Title"
+                placeholder="Highlight title"
                 value={title}
                 required
                 onChange={(e) => setTitle(e.target.value)}
                 className={inputClass}
               />
-            </div>
 
-            {/* SHORT DESCRIPTION */}
-            <div className="space-y-1.5">
-              <label className={sectionLabel}>Short Description</label>
-              <textarea
-                rows={2}
-                placeholder="Short Description (max 400 characters)"
-                value={shortDescription}
-                onChange={(e) => setShortDescription(e.target.value)}
-                className={`${inputClass} resize-none`}
-              />
-              <p
-                className={`text-xs text-right ${
-                  isShortDescriptionInvalid()
-                    ? "text-red-500"
-                    : "text-gray-400"
-                }`}
-              >
-                {shortDescription.length} / {MAX_SHORT_DESC_CHARS} characters
-              </p>
-            </div>
+              <div className="space-y-1.5">
+                <textarea
+                  rows={2}
+                  placeholder="Short description (shows on cards, max 400 chars)"
+                  value={shortDescription}
+                  onChange={(e) => setShortDescription(e.target.value)}
+                  className={`${inputClass} resize-none`}
+                />
+                <p
+                  className={`text-xs text-right ${
+                    isShortDescriptionInvalid()
+                      ? "text-red-500"
+                      : "text-gray-400"
+                  }`}
+                >
+                  {shortDescription.length} / {MAX_SHORT_DESC_CHARS} characters
+                </p>
+              </div>
 
-            {/* LONG DESCRIPTION */}
-            <div className="space-y-1.5">
-              <label className={sectionLabel}>Long Description</label>
               <textarea
                 rows={6}
-                placeholder="Long Description (What happened?)"
+                placeholder="Long description — what happened at the event?"
                 value={longDescription}
                 onChange={(e) => setLongDescription(e.target.value)}
                 className={`${inputClass} resize-none`}
               />
-            </div>
+            </FormSection>
 
-            {/* GALLERY UPLOAD */}
-            <div>
-              <p className={`${sectionLabel} mb-2`}>Gallery Images</p>
+            {/* ── GALLERY ────────────────────────── */}
+            <FormSection
+              title="Gallery"
+              description={`Upload up to ${MAX_FILES} images. JPG / PNG, max 12 MB each.`}
+            >
               <input
                 type="file"
                 ref={fileRef}
@@ -346,7 +347,7 @@ export default function CreateHighlight() {
                 className="text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
               />
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {gallery.map((g, i) => (
                   <div
                     key={i}
@@ -395,18 +396,20 @@ export default function CreateHighlight() {
                   </div>
                 ))}
               </div>
-            </div>
+            </FormSection>
 
-            {/* GUESTS SECTION */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <p className={sectionLabel}>Guests</p>
+            {/* ── GUESTS ─────────────────────────── */}
+            <FormSection
+              title="Guests"
+              description="Speakers, performers, panelists — anyone you want to credit."
+            >
+              <div className="-mt-1 flex justify-end">
                 <button
                   type="button"
                   onClick={addGuest}
                   className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold"
                 >
-                  + Add Guest
+                  + Add guest
                 </button>
               </div>
 
@@ -483,11 +486,13 @@ export default function CreateHighlight() {
                   </div>
                 ))}
               </div>
-            </div>
+            </FormSection>
 
-            {/* KEY HIGHLIGHTS */}
-            <div>
-              <p className={`${sectionLabel} mb-2`}>Key Highlights</p>
+            {/* ── KEY MOMENTS ────────────────────── */}
+            <FormSection
+              title="Key moments"
+              description="A short list of the standout moments — bullet-point style."
+            >
               {keyHighlights.map((k, idx) => (
                 <div key={idx} className="flex gap-3 mb-2">
                   <input
@@ -519,15 +524,17 @@ export default function CreateHighlight() {
               <button
                 type="button"
                 onClick={() => setKeyHighlights((prev) => [...prev, ""])}
-                className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold"
+                className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold self-start"
               >
-                + Add Highlight
+                + Add moment
               </button>
-            </div>
+            </FormSection>
 
-            {/* STATUS */}
-            <div className="space-y-1.5">
-              <label className={sectionLabel}>Status</label>
+            {/* ── PUBLISHING ────────────────────── */}
+            <FormSection
+              title="Publishing"
+              description="Status controls visibility. Featured highlights show on the home page."
+            >
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
@@ -537,18 +544,17 @@ export default function CreateHighlight() {
                 <option value="published">Published</option>
                 <option value="archived">Archived</option>
               </select>
-            </div>
 
-            {/* FEATURED */}
-            <label className="flex items-center gap-2 text-sm text-gray-600">
-              <input
-                type="checkbox"
-                checked={featured}
-                onChange={(e) => setFeatured(e.target.checked)}
-                className="w-4 h-4 accent-emerald-500"
-              />
-              Feature on Homepage
-            </label>
+              <label className="flex items-center gap-2 text-sm text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={featured}
+                  onChange={(e) => setFeatured(e.target.checked)}
+                  className="w-4 h-4 accent-emerald-500"
+                />
+                Feature on home page
+              </label>
+            </FormSection>
 
             {/* SUBMIT */}
             <button

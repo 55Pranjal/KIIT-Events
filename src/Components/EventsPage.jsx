@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { optimizeCard } from "../utils/imageOptimization";
 import { formatEventDateTime } from "../utils/formatDate";
 import Doodles from "./Doodles";
+import { SkeletonGrid } from "./Skeleton";
+import EmptyState, { CalendarIcon, SearchIcon } from "./EmptyState";
 
 /**
  * EventsPage
@@ -392,16 +394,15 @@ const EventsPage = () => {
         {view === "past" ? (
           <>
             {loadingPast ? (
-              <p className="text-gray-500 text-center py-12">Loading…</p>
+              <SkeletonGrid count={8} />
             ) : pastError ? (
               <p className="text-red-500 text-center py-12">{pastError}</p>
             ) : visiblePastEvents.length === 0 ? (
-              <div className="bg-white border border-dashed border-[#e5e5e5] rounded-2xl p-12 text-center">
-                <p className="text-xl font-semibold text-[#111] mb-1">
-                  No past events yet.
-                </p>
-                <p className="text-gray-500">Check back soon for highlights.</p>
-              </div>
+              <EmptyState
+                icon={<CalendarIcon />}
+                title="No past events yet"
+                description="Once events wrap up, their highlights will show up here."
+              />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {visiblePastEvents.map((ev) => renderEventCard(ev, true))}
@@ -411,18 +412,38 @@ const EventsPage = () => {
         ) : (
           <>
             {loadingEvents ? (
-              <p className="text-gray-500 text-center py-12">Loading events…</p>
+              <SkeletonGrid count={8} />
             ) : eventsError ? (
               <p className="text-red-500 text-center py-12">{eventsError}</p>
             ) : visibleClientEvents.length === 0 ? (
-              <div className="bg-white border border-dashed border-[#e5e5e5] rounded-2xl p-12 text-center">
-                <p className="text-xl font-semibold text-[#111] mb-1">
-                  No {view} events found.
-                </p>
-                <p className="text-gray-500">
-                  Try clearing filters or come back later.
-                </p>
-              </div>
+              <EmptyState
+                icon={
+                  search || selectedSociety !== "All" ? (
+                    <SearchIcon />
+                  ) : (
+                    <CalendarIcon />
+                  )
+                }
+                title={`No ${view} events found`}
+                description={
+                  search || selectedSociety !== "All"
+                    ? "Try clearing your search or society filter."
+                    : "Check back later — fresh events drop all the time."
+                }
+                action={
+                  (search || selectedSociety !== "All") && (
+                    <button
+                      onClick={() => {
+                        setSearch("");
+                        setSelectedSociety("All");
+                      }}
+                      className="px-5 py-2.5 border border-[#e5e5e5] hover:bg-gray-50 text-[#333] rounded-lg text-sm font-medium transition"
+                    >
+                      Clear filters
+                    </button>
+                  )
+                }
+              />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {visibleClientEvents.map((ev) => renderEventCard(ev, false))}
