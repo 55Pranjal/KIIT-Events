@@ -31,6 +31,7 @@ import EventsPage from "./Components/EventsPage";
 import CreateHighlights from "./Components/CreateHighlights";
 import EventHighlightSingle from "./Components/EventHighlights";
 import LoadingPage from "./Components/LoadingPage";
+import NotFound from "./Components/NotFound";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -89,7 +90,7 @@ function App() {
           path="/events/:eventId/highlights"
           element={<EventHighlightSingle />}
         />
-        <Route path="*" element={<LoadingPage />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
 
       <ToastContainer
