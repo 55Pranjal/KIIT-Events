@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { toast } from "react-toastify";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Doodles from "./Doodles";
@@ -45,7 +46,10 @@ const EventDetails = () => {
 
   const handleRegister = async () => {
     const token = localStorage.getItem("token");
-    if (!token) return alert("Please login to register");
+    if (!token) {
+      toast.warn("Please log in to register.");
+      return;
+    }
 
     try {
       const res = await axios.post(
@@ -53,11 +57,11 @@ const EventDetails = () => {
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert(res.data.message);
+      toast.success(res.data?.message || "Registered successfully.");
       setRegistered(true);
     } catch (err) {
       console.error("Registration failed:", err);
-      alert(err.response?.data?.message || "Something went wrong");
+      toast.error(err.response?.data?.message || "Something went wrong.");
     }
   };
 

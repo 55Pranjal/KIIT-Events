@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { GoogleLogin } from "@react-oauth/google";
 import Footer from "./Footer";
 import Doodles from "./Doodles";
+import { getApiErrorMessage } from "../utils/apiError";
 
 const Feature = ({ children }) => (
   <li className="flex items-start gap-3 text-gray-700">
@@ -41,8 +42,10 @@ const SignUpScreen = () => {
     } catch (err) {
       console.error("[SignUp] Google sign-up error:", err);
       toast.error(
-        err.response?.data?.error ||
+        getApiErrorMessage(
+          err,
           "Sign-up failed. Make sure you're using your @kiit.ac.in account."
+        )
       );
     } finally {
       setSubmitting(false);
@@ -143,7 +146,7 @@ const SignUpScreen = () => {
         </div>
       </div>
 
-      <Footer />
+      <Footer flush />
     </>
   );
 };
