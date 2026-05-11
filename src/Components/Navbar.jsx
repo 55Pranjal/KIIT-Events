@@ -1,13 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
+import NotificationsDropdown from "./NotificationsDropdown";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [notifOpen, setNotifOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   // 🔹 Check login state and token validity
   useEffect(() => {
@@ -56,34 +60,62 @@ const Navbar = () => {
     };
   }, []);
 
-  // Fetch unread notification count whenever auth state changes.
+  // Fetch the notification list (used both for the bell badge count and
+  // for populating the dropdown).
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const { data } = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/notifications`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (Array.isArray(data)) setNotifications(data);
+    } catch {
+      /* silent — bell just stays at 0 */
+    }
+  }, []);
+
   useEffect(() => {
     if (!user) {
-      setUnreadCount(0);
+      setNotifications([]);
       return;
     }
-    const fetchUnread = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-        const { data } = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/notifications`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (Array.isArray(data)) {
-          setUnreadCount(data.filter((n) => !n.isRead).length);
-        }
-      } catch {
-        /* silent — bell just stays at 0 */
+    fetchNotifications();
+  }, [user, fetchNotifications]);
+
+  // Re-fetch each time the dropdown opens so reads done elsewhere reflect.
+  useEffect(() => {
+    if (notifOpen && user) fetchNotifications();
+  }, [notifOpen, user, fetchNotifications]);
+
+  // Click outside / Escape closes the notifications dropdown.
+  useEffect(() => {
+    if (!notifOpen) return;
+    const onClick = (e) => {
+      if (
+        !e.target.closest("[data-notif-dropdown]") &&
+        !e.target.closest("[data-notif-trigger]")
+      ) {
+        setNotifOpen(false);
       }
     };
-    fetchUnread();
-  }, [user]);
+    const onKey = (e) => {
+      if (e.key === "Escape") setNotifOpen(false);
+    };
+    document.addEventListener("click", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("click", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [notifOpen]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     setUser(null);
-    setUnreadCount(0);
+    setNotifications([]);
+    setNotifOpen(false);
     window.dispatchEvent(new Event("authChange"));
     window.dispatchEvent(new Event("storage"));
     navigate("/");
@@ -112,7 +144,7 @@ const Navbar = () => {
         </div>
 
         {/* Desktop Nav Links */}
-        <ul className="hidden sm:flex gap-8 text-[#4b5563] text-[15px] font-medium">
+        <ul className="hidden sm:flex gap-6 lg:gap-8 text-[#4b5563] text-[15px] font-medium">
           <li>
             <button
               onClick={() => handleNavigation("/")}
@@ -139,6 +171,14 @@ const Navbar = () => {
           </li>
           <li>
             <button
+              onClick={() => handleNavigation("/AnnouncementsList")}
+              className="hover:text-emerald-600 transition"
+            >
+              Announcements
+            </button>
+          </li>
+          <li>
+            <button
               onClick={() => handleNavigation("/Contact")}
               className="hover:text-emerald-600 transition"
             >
@@ -151,41 +191,57 @@ const Navbar = () => {
         <div className="flex items-center gap-2 sm:gap-3">
           {user ? (
             <>
-              {/* Notifications — SVG bell with unread badge */}
-              <button
-                onClick={() => handleNavigation("/Notifications")}
-                className="relative hidden sm:flex w-9 h-9 items-center justify-center rounded-full text-[#4b5563] hover:bg-emerald-50 hover:text-emerald-600 transition-all"
-                aria-label={
-                  unreadCount > 0
-                    ? `Notifications, ${unreadCount} unread`
-                    : "Notifications"
-                }
-                title={
-                  unreadCount > 0
-                    ? `${unreadCount} unread`
-                    : "Notifications"
-                }
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-[18px] h-[18px]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              {/* Notifications — bell trigger + dropdown */}
+              <div className="relative" data-notif-trigger>
+                <button
+                  onClick={() => setNotifOpen((o) => !o)}
+                  className="relative flex w-9 h-9 items-center justify-center rounded-full text-[#4b5563] hover:bg-emerald-50 hover:text-emerald-600 transition-all"
+                  aria-label={
+                    unreadCount > 0
+                      ? `Notifications, ${unreadCount} unread`
+                      : "Notifications"
+                  }
+                  aria-expanded={notifOpen}
+                  aria-haspopup="dialog"
+                  title={
+                    unreadCount > 0
+                      ? `${unreadCount} unread`
+                      : "Notifications"
+                  }
                 >
-                  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-                  <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-                </svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-[18px] h-[18px]"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                  </svg>
 
-                {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold leading-none flex items-center justify-center ring-2 ring-white">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold leading-none flex items-center justify-center ring-2 ring-white">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {notifOpen && (
+                  <NotificationsDropdown
+                    notifications={notifications}
+                    setNotifications={setNotifications}
+                    onClose={() => setNotifOpen(false)}
+                    onView={() => {
+                      setNotifOpen(false);
+                      navigate("/Notifications");
+                    }}
+                  />
                 )}
-              </button>
+              </div>
 
               {/* Avatar + first-name pill — also opens Dashboard */}
               <button
@@ -260,46 +316,20 @@ const Navbar = () => {
           isMenuOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
         } bg-[#f5f5f2] border-t border-[#e5e5e0]`}
       >
-        <ul className="flex flex-col items-center text-[#444] py-3 space-y-3 text-[16px]">
-          {user && (
-            <li className="w-full text-center">
+        <ul className="flex flex-col items-center text-[#444] py-3 space-y-1 text-[16px]">
+          {[
+            { label: "Home", path: "/" },
+            { label: "About", path: "/About" },
+            { label: "Events", path: "/EventsPage" },
+            { label: "Announcements", path: "/AnnouncementsList" },
+            { label: "Contact", path: "/Contact" },
+          ].map(({ label, path }) => (
+            <li key={label} className="w-full text-center">
               <button
-                onClick={() => handleNavigation("/Notifications")}
-                className="flex justify-center items-center gap-2 py-2 hover:bg-[#ececec] w-full transition font-medium"
+                onClick={() => handleNavigation(path)}
+                className="block py-2.5 hover:bg-[#ececec] w-full transition"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-[18px] h-[18px]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-                  <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-                </svg>
-                Notifications
-              </button>
-            </li>
-          )}
-
-          {["Home", "About", "Events", "Contact"].map((item) => (
-            <li key={item} className="w-full text-center">
-              <button
-                onClick={() =>
-                  handleNavigation(
-                    item === "Home"
-                      ? "/"
-                      : item === "Events"
-                        ? "/EventsPage"
-                        : `/${item}`,
-                  )
-                }
-                className="block py-2 hover:bg-[#ececec] w-full transition"
-              >
-                {item}
+                {label}
               </button>
             </li>
           ))}

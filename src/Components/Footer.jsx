@@ -22,15 +22,21 @@ const Footer = () => {
         </p>
 
         {/* Links */}
-        <nav className="flex justify-center gap-6 mt-6 text-sm text-gray-500">
+        <nav className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-6 text-sm text-gray-500">
           <Link to="/" className="hover:text-emerald-600 transition">
             Home
+          </Link>
+          <Link to="/About" className="hover:text-emerald-600 transition">
+            About
           </Link>
           <Link to="/EventsPage" className="hover:text-emerald-600 transition">
             Events
           </Link>
-          <Link to="/About" className="hover:text-emerald-600 transition">
-            About
+          <Link
+            to="/AnnouncementsList"
+            className="hover:text-emerald-600 transition"
+          >
+            Announcements
           </Link>
           <Link to="/Contact" className="hover:text-emerald-600 transition">
             Contact

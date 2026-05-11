@@ -372,6 +372,38 @@ const EventsPage = () => {
           </div>
         </div>
 
+        {/* Active filter chips */}
+        {(selectedSociety !== "All" || search) && (
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-gray-400">
+              Active filters
+            </span>
+            {selectedSociety !== "All" && (
+              <FilterChip
+                label="Society"
+                value={selectedSociety}
+                onRemove={() => setSelectedSociety("All")}
+              />
+            )}
+            {search && (
+              <FilterChip
+                label="Search"
+                value={`"${search}"`}
+                onRemove={() => setSearch("")}
+              />
+            )}
+            <button
+              onClick={() => {
+                setSelectedSociety("All");
+                setSearch("");
+              }}
+              className="text-xs text-gray-500 hover:text-emerald-600 font-medium underline-offset-4 hover:underline transition"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+
         {/* Summary */}
         <div className="text-sm text-gray-500 mb-6">
           Showing{" "}
@@ -386,8 +418,7 @@ const EventsPage = () => {
             : visibleClientEvents.length) === 1
             ? ""
             : "s"}
-          {selectedSociety !== "All" ? ` from ${selectedSociety}` : ""}
-          {search ? ` matching "${search}"` : ""}.
+          .
         </div>
 
         {/* Content */}
@@ -458,5 +489,36 @@ const EventsPage = () => {
     </div>
   );
 };
+
+function FilterChip({ label, value, onRemove }) {
+  return (
+    <span className="inline-flex items-center gap-1 pl-3 pr-1 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-full text-xs font-medium">
+      <span>
+        <span className="text-emerald-600/70">{label}:</span>{" "}
+        <span className="font-semibold">{value}</span>
+      </span>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove ${label} filter`}
+        className="ml-0.5 w-5 h-5 inline-flex items-center justify-center rounded-full hover:bg-emerald-100 text-emerald-700 transition"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-3 h-3"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </span>
+  );
+}
 
 export default EventsPage;
