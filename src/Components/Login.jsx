@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { GoogleLogin } from "@react-oauth/google";
 import Footer from "./Footer";
 import Doodles from "./Doodles";
 import Spinner from "./Spinner";
@@ -22,6 +23,39 @@ const Login = () => {
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const storeSessionAndRedirect = (data) => {
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("role", data.role);
+    localStorage.setItem("societyRequestStatus", data.societyRequestStatus);
+    window.dispatchEvent(new Event("authChange"));
+    navigate("/");
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setSubmitting(true);
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/users/google`,
+        { credential: credentialResponse.credential }
+      );
+      toast.success(`Welcome, ${res.data.name || ""}!`.trim() + " 👋");
+      storeSessionAndRedirect(res.data);
+    } catch (err) {
+      console.error("[LOGIN] Google sign-in error:", err);
+      toast.error(
+        err.response?.data?.error ||
+          "Google sign-in failed. Please try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    console.error("[LOGIN] Google sign-in popup closed or errored.");
+    toast.error("Google sign-in was cancelled.");
+  };
+
   const handleRegularLogin = async (e) => {
     e.preventDefault();
     const email = e.target.email.value;
@@ -29,32 +63,20 @@ const Login = () => {
 
     setSubmitting(true);
     try {
-      console.info("[LOGIN] Attempting user login...");
-
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/users/login`,
         { email, password }
       );
 
       if (res.status === 200) {
-        console.info("[LOGIN SUCCESS] User logged in successfully.");
-
-        localStorage.setItem("token", res.data.token);
-        localStorage.setItem("role", res.data.role);
-        localStorage.setItem(
-          "societyRequestStatus",
-          res.data.societyRequestStatus
-        );
-
         toast.success(`Welcome back, ${res.data.name || ""}!`.trim() + " 👋");
-        window.dispatchEvent(new Event("authChange"));
-        navigate("/");
+        storeSessionAndRedirect(res.data);
       }
     } catch (err) {
       console.error(
         "[LOGIN ERROR]",
         err.response?.status || "",
-        err.response?.data?.message || err.message
+        err.response?.data?.error || err.message
       );
       toast.error("Login failed. Please check your credentials.");
     } finally {
@@ -107,8 +129,27 @@ const Login = () => {
               </span>
             </h1>
             <p className="text-gray-500 mb-8 text-sm md:text-base">
-              Log in to access your dashboard.
+              Sign in with your KIIT email.
             </p>
+
+            <div className="flex justify-center">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                text="continue_with"
+                shape="rectangular"
+                size="large"
+                width="320"
+              />
+            </div>
+
+            <div className="flex items-center gap-3 my-6">
+              <div className="flex-grow h-px bg-[#e5e5e5]" />
+              <span className="text-xs uppercase tracking-wider text-gray-400">
+                or use password
+              </span>
+              <div className="flex-grow h-px bg-[#e5e5e5]" />
+            </div>
 
             <form onSubmit={handleRegularLogin} className="flex flex-col gap-4">
               <div className="space-y-1.5">
@@ -165,12 +206,12 @@ const Login = () => {
             </form>
 
             <p className="text-sm text-center text-gray-500 mt-6">
-              Don't have an account?{" "}
+              First time here?{" "}
               <a
                 href="/signup"
                 className="text-emerald-600 hover:text-emerald-700 font-semibold"
               >
-                Sign up here
+                Create your account
               </a>
             </p>
           </div>

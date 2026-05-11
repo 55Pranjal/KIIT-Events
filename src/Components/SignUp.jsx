@@ -3,9 +3,9 @@ import Navbar from "./Navbar";
 import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { GoogleLogin } from "@react-oauth/google";
 import Footer from "./Footer";
 import Doodles from "./Doodles";
-import Spinner from "./Spinner";
 
 const Feature = ({ children }) => (
   <li className="flex items-start gap-3 text-gray-700">
@@ -17,58 +17,42 @@ const Feature = ({ children }) => (
 );
 
 const SignUpScreen = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
   const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    console.log("[SignUpScreen] Attempting to create account for:", email);
-
+  const handleGoogleSuccess = async (credentialResponse) => {
     setSubmitting(true);
     try {
       const res = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/users/add`,
-        { name, email, password, phone }
+        `${import.meta.env.VITE_BACKEND_URL}/api/users/google`,
+        { credential: credentialResponse.credential }
       );
 
-      console.log("[SignUpScreen] Signup successful. Status:", res.status);
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("role", res.data.role);
+      localStorage.setItem(
+        "societyRequestStatus",
+        res.data.societyRequestStatus
+      );
 
-      if (res.status === 201) {
-        console.log("[SignUpScreen] User token and role stored locally.");
-        localStorage.setItem("token", res.data.token);
-        localStorage.setItem("role", res.data.role);
-        localStorage.setItem(
-          "societyRequestStatus",
-          res.data.societyRequestStatus
-        );
-
-        toast.success("Account created — welcome to KIIT Events! 🎉");
-        window.dispatchEvent(new Event("authChange"));
-        navigate("/");
-      } else if (res.data?.message) {
-        toast.success(res.data.message);
-      }
-
-      setName("");
-      setEmail("");
-      setPassword("");
-      setPhone("");
+      toast.success("Welcome to KIIT Events! 🎉");
+      window.dispatchEvent(new Event("authChange"));
+      navigate("/");
     } catch (err) {
-      console.error("[SignUpScreen] Error creating account:", err);
-      toast.error(err.response?.data?.error || "Error creating account.");
+      console.error("[SignUp] Google sign-up error:", err);
+      toast.error(
+        err.response?.data?.error ||
+          "Sign-up failed. Make sure you're using your @kiit.ac.in account."
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
-  const inputClass =
-    "w-full rounded-lg px-4 py-3 bg-white text-[#111] placeholder-gray-400 border border-[#e5e5e5] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all";
+  const handleGoogleError = () => {
+    console.error("[SignUp] Google sign-up popup closed or errored.");
+    toast.error("Sign-up was cancelled.");
+  };
 
   return (
     <>
@@ -93,8 +77,8 @@ const SignUpScreen = () => {
             </h2>
 
             <p className="text-gray-600 text-base xl:text-lg leading-relaxed mb-10">
-              Create your account to register for events, follow societies you
-              love, and never miss what's happening around you.
+              Create your account in one tap — we'll verify your KIIT email
+              through Google. No passwords to remember.
             </p>
 
             <ul className="space-y-3.5">
@@ -115,92 +99,36 @@ const SignUpScreen = () => {
               </span>
             </h1>
             <p className="text-gray-500 mb-8 text-sm md:text-base">
-              Join the campus community in seconds.
+              Sign up with your <span className="font-semibold">@kiit.ac.in</span>{" "}
+              Google account.
             </p>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="Your full name"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
+            <div className="flex justify-center">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                text="signup_with"
+                shape="rectangular"
+                size="large"
+                width="320"
+              />
+            </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  placeholder="you@kiit.ac.in"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
+            {submitting && (
+              <p className="text-center text-sm text-gray-500 mt-4">
+                Creating your account…
+              </p>
+            )}
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Password
-                </label>
-                <div className="relative w-full">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className={inputClass}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute right-3 top-2/4 -translate-y-2/4 text-gray-400 hover:text-emerald-600 transition-colors"
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                  >
-                    <img
-                      src={showPassword ? "/eye.svg" : "/eye-off.svg"}
-                      alt=""
-                      className="h-5 w-5 opacity-70"
-                      aria-hidden="true"
-                    />
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Phone Number
-                </label>
-                <input
-                  type="text"
-                  placeholder="10-digit phone"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full mt-3 py-3 rounded-lg font-semibold text-white bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 disabled:bg-emerald-300 disabled:cursor-not-allowed shadow-sm transition-all flex items-center justify-center gap-2"
-              >
-                {submitting && <Spinner className="w-4 h-4" />}
-                {submitting ? "Creating…" : "Create Account"}
-              </button>
-            </form>
+            <div className="mt-8 rounded-lg bg-emerald-50 border border-emerald-100 p-4">
+              <p className="text-xs text-emerald-800 leading-relaxed">
+                <span className="font-semibold">Heads up:</span> only KIIT
+                Google accounts (
+                <span className="font-mono">@kiit.ac.in</span>) are accepted.
+                If you signed in with a personal Gmail by mistake, switch
+                accounts in the Google popup.
+              </p>
+            </div>
 
             <p className="text-sm text-center text-gray-500 mt-6">
               Already have an account?{" "}

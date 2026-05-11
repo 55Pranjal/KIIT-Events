@@ -9,7 +9,7 @@ import { useNavigate } from "react-router";
 
 const EditProfile = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState({ name: "", phone: "" });
+  const [user, setUser] = useState({ name: "" });
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -20,7 +20,7 @@ const EditProfile = () => {
           `${import.meta.env.VITE_BACKEND_URL}/api/users/me`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        setUser(res.data);
+        setUser({ name: res.data.name || "" });
       } catch (err) {
         console.error("[EditProfile] Error fetching user data:", err);
         toast.error("Failed to fetch user data.");
@@ -41,7 +41,7 @@ const EditProfile = () => {
     try {
       await axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/api/users/update`,
-        user,
+        { name: user.name },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -76,7 +76,7 @@ const EditProfile = () => {
             </span>
           </h2>
           <p className="text-center text-sm text-gray-500 mb-6">
-            Update your name or phone number.
+            Update your display name.
           </p>
 
           <div className="flex flex-col gap-5">
@@ -90,20 +90,6 @@ const EditProfile = () => {
                 value={user.name}
                 onChange={handleChange}
                 placeholder="Enter your name"
-                className={inputClass}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Phone Number
-              </label>
-              <input
-                type="text"
-                name="phone"
-                value={user.phone}
-                onChange={handleChange}
-                placeholder="Enter phone number"
                 className={inputClass}
               />
             </div>

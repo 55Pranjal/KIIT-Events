@@ -306,11 +306,7 @@ const SocietyDetails = () => {
                         President:
                       </span>{" "}
                       {s.president
-                        ? `${s.president.name} (${s.president.email}${
-                            s.president.phone
-                              ? `, ${s.president.phone}`
-                              : ""
-                          })`
+                        ? `${s.president.name} (${s.president.email})`
                         : "N/A"}
                     </div>
                     <div>

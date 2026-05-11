@@ -105,7 +105,6 @@ const Dashboard = () => {
   const infoRows = [
     { label: "Username", value: user.name },
     { label: "Email", value: user.email },
-    { label: "Phone", value: user.phone },
     { label: "Role", value: user.role },
   ];
 

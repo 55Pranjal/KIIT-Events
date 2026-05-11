@@ -32,8 +32,12 @@ import CreateHighlights from "./Components/CreateHighlights";
 import EventHighlightSingle from "./Components/EventHighlights";
 import LoadingPage from "./Components/LoadingPage";
 import NotFound from "./Components/NotFound";
+import ServerWakeOverlay from "./Components/ServerWakeOverlay";
+import axios from "axios";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+const REWAKE_THRESHOLD_MS = 10 * 60 * 1000;
 
 function App() {
   const navigate = useNavigate();
@@ -54,8 +58,30 @@ function App() {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    let hiddenAt = null;
+    const BACKEND =
+      import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
+
+    const onVisibility = () => {
+      if (document.hidden) {
+        hiddenAt = Date.now();
+        return;
+      }
+      if (hiddenAt && Date.now() - hiddenAt > REWAKE_THRESHOLD_MS) {
+        axios.get(`${BACKEND}/api/health`).catch(() => {});
+      }
+      hiddenAt = null;
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+
   return (
     <>
+      <ServerWakeOverlay />
       <Routes>
         <Route path="/loading" element={<LoadingPage />} />
         <Route path="/" element={<LandingScreen />} />
