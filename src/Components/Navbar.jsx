@@ -258,35 +258,19 @@ const Navbar = () => {
                 </span>
               </button>
 
-              {/* Log out */}
+              {/* Log out — sm+ only; mobile users get it inside the hamburger */}
               <button
                 onClick={handleLogout}
-                className="px-3 sm:px-4 py-2 rounded-lg text-sm border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 transition"
-                aria-label="Log out"
-                title="Log out"
+                className="hidden sm:flex px-4 py-2 rounded-lg text-sm border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 transition"
               >
-                <span className="hidden sm:inline">Log out</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-4 h-4 sm:hidden"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                  <polyline points="16 17 21 12 16 7" />
-                  <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
+                Log out
               </button>
             </>
           ) : (
             <>
               <button
                 onClick={() => handleNavigation("/Login")}
-                className="text-sm text-[#374151] hover:text-black transition"
+                className="hidden sm:inline text-sm text-[#374151] hover:text-black transition"
               >
                 Sign In
               </button>
@@ -335,16 +319,50 @@ const Navbar = () => {
           ))}
         </ul>
 
-        {user && (
-          <div className="border-t border-[#e5e5e0] pt-3 pb-3 flex justify-center">
-            <div className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full bg-white border border-[#e5e5e0]">
-              <span className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-white text-xs font-bold">
+        {user ? (
+          <div className="border-t border-[#e5e5e0] py-3 px-4 space-y-2">
+            <button
+              onClick={() => handleNavigation("/Dashboard")}
+              className="w-full flex items-center gap-2 pl-1 pr-3 py-1 rounded-full bg-white border border-[#e5e5e0] hover:border-emerald-200 hover:bg-[#f7faf8] transition"
+              title={`Dashboard — ${user.name}`}
+            >
+              <span className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                 {user.name?.charAt(0).toUpperCase() || "?"}
               </span>
-              <span className="text-sm font-medium text-[#374151]">
+              <span className="text-sm font-medium text-[#374151] truncate">
                 {user.name}
               </span>
-            </div>
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="w-full flex justify-center items-center gap-2 py-2.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 transition text-sm font-medium"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              Log out
+            </button>
+          </div>
+        ) : (
+          <div className="border-t border-[#e5e5e0] py-3 px-4">
+            <button
+              onClick={() => handleNavigation("/Login")}
+              className="w-full block py-2.5 rounded-lg border border-[#e5e5e0] text-[#374151] hover:bg-[#f7faf8] hover:border-emerald-200 transition text-sm font-medium"
+            >
+              Sign In
+            </button>
           </div>
         )}
       </div>
