@@ -336,8 +336,15 @@ const CreateEvent = () => {
   const [societiesError, setSocietiesError] = useState("");
 
   const BACKEND = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
+  const role = localStorage.getItem("role");
+  const isAdmin = role === "admin";
 
   useEffect(() => {
+    if (!isAdmin) {
+      // Society users can only create events for themselves — backend resolves
+      // the societyId server-side, so we don't need to fetch the dropdown.
+      return;
+    }
     const fetchSocieties = async () => {
       setLoadingSocieties(true);
       setSocietiesError("");
@@ -414,7 +421,7 @@ const CreateEvent = () => {
     };
 
     fetchSocieties();
-  }, [BACKEND]);
+  }, [BACKEND, isAdmin]);
 
   function normalizeDriveURL(url) {
     const match = url.match(/\/d\/(.*?)\//);
@@ -484,23 +491,25 @@ const CreateEvent = () => {
         toast.error("You must be logged in as an admin to create an event.");
         return;
       }
-      if (!societyId) {
-        toast.warn("Please select a society to associate this event with.");
-        return;
-      }
+      if (isAdmin) {
+        if (!societyId) {
+          toast.warn("Please select a society to associate this event with.");
+          return;
+        }
 
-      // sanity-check the selected society exists in fetched list
-      const found = societies.find((s) => s._id === societyId);
-      console.info(
-        "[DEBUG] Selected societyId:",
-        societyId,
-        "found:",
-        !!found,
-        found
-      );
-      if (!found) {
-        toast.error("Selected society not found in fetched societies.");
-        return;
+        // sanity-check the selected society exists in fetched list
+        const found = societies.find((s) => s._id === societyId);
+        console.info(
+          "[DEBUG] Selected societyId:",
+          societyId,
+          "found:",
+          !!found,
+          found
+        );
+        if (!found) {
+          toast.error("Selected society not found in fetched societies.");
+          return;
+        }
       }
 
       if (typeof coverImageURL !== "string" || coverImageURL.trim() === "") {
@@ -527,7 +536,8 @@ const CreateEvent = () => {
         registrationStatus: registrationStatus || "",
         coverImageURL: normalizedURL,
         eventCategory: finalCategory || "",
-        societyId: societyId,
+        // Only admins choose societyId; for societies the backend resolves it.
+        ...(isAdmin && societyId ? { societyId } : {}),
       };
 
       console.debug("[DEBUG] POST payload:", eventData);
@@ -695,30 +705,32 @@ const CreateEvent = () => {
                 className={inputClass}
               />
 
-              {loadingSocieties ? (
-                <div className="rounded-lg p-3 bg-[#f7faf8] border border-[#eeeeea] text-gray-500 w-full text-sm">
-                  Loading societies...
-                </div>
-              ) : societiesError ? (
-                <div className="rounded-lg p-3 bg-red-50 border border-red-200 text-red-600 w-full text-sm">
-                  {societiesError}
-                </div>
-              ) : (
-                <select
-                  required
-                  value={societyId}
-                  onChange={(e) => setSocietyId(e.target.value)}
-                  className={selectClass}
-                >
-                  <option value="" disabled>
-                    Hosting society
-                  </option>
-                  {societies.map((soc) => (
-                    <option key={soc._id} value={soc._id}>
-                      {soc.name}
+              {isAdmin && (
+                loadingSocieties ? (
+                  <div className="rounded-lg p-3 bg-[#f7faf8] border border-[#eeeeea] text-gray-500 w-full text-sm">
+                    Loading societies...
+                  </div>
+                ) : societiesError ? (
+                  <div className="rounded-lg p-3 bg-red-50 border border-red-200 text-red-600 w-full text-sm">
+                    {societiesError}
+                  </div>
+                ) : (
+                  <select
+                    required
+                    value={societyId}
+                    onChange={(e) => setSocietyId(e.target.value)}
+                    className={selectClass}
+                  >
+                    <option value="" disabled>
+                      Hosting society
                     </option>
-                  ))}
-                </select>
+                    {societies.map((soc) => (
+                      <option key={soc._id} value={soc._id}>
+                        {soc.name}
+                      </option>
+                    ))}
+                  </select>
+                )
               )}
 
               <select
