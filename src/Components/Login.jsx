@@ -73,12 +73,19 @@ const Login = () => {
         storeSessionAndRedirect(res.data);
       }
     } catch (err) {
+      const status = err.response?.status;
+      const serverMessage = err.response?.data?.error;
       console.error(
         "[LOGIN ERROR]",
-        err.response?.status || "",
-        err.response?.data?.error || err.message
+        status || "",
+        serverMessage || err.message
       );
-      toast.error("Login failed. Please check your credentials.");
+      toast.error(
+        serverMessage ||
+          (status === 429
+            ? "Too many login attempts. Please wait a few minutes."
+            : "Login failed. Please check your credentials.")
+      );
     } finally {
       setSubmitting(false);
     }
@@ -139,7 +146,7 @@ const Login = () => {
                 text="continue_with"
                 shape="rectangular"
                 size="large"
-                width="320"
+                width="280"
               />
             </div>
 

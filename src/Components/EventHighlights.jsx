@@ -140,7 +140,7 @@ export default function EventHighlights() {
       <>
         <Navbar />
         <div className="flex justify-center items-center px-4 py-16 min-h-[60vh]">
-          <div className="w-full max-w-xl bg-white border border-[#e5e5e5] rounded-2xl p-10 text-center shadow-sm">
+          <div className="w-full max-w-xl bg-white border border-[#e5e5e5] rounded-2xl p-5 sm:p-10 text-center shadow-sm">
             <h2 className="font-display text-2xl md:text-3xl font-bold text-[#111] mb-2 tracking-tightish">
               No Highlights Yet
             </h2>

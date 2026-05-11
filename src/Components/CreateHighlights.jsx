@@ -260,7 +260,7 @@ export default function CreateHighlight() {
       <div className="relative flex-grow overflow-hidden flex flex-col">
         <Doodles variant="hero" />
         <div className="relative z-10 flex justify-center flex-grow px-4 py-10">
-          <div className="bg-white border border-[#e5e5e5] shadow-sm w-full max-w-3xl rounded-2xl py-8 px-6 sm:px-10">
+          <div className="bg-white border border-[#e5e5e5] shadow-sm w-full max-w-3xl rounded-2xl py-8 px-4 sm:px-10">
           <h1 className="font-display text-center font-bold text-3xl mb-2 text-[#111] tracking-tightish">
             Create{" "}
             <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">

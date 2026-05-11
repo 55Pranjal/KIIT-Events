@@ -110,7 +110,7 @@ const SignUpScreen = () => {
                 text="signup_with"
                 shape="rectangular"
                 size="large"
-                width="320"
+                width="280"
               />
             </div>
 

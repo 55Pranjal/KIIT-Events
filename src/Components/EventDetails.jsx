@@ -85,7 +85,22 @@ const EventDetails = () => {
     open: "bg-emerald-100 text-emerald-700",
     upcoming: "bg-yellow-100 text-yellow-700",
     closed: "bg-red-100 text-red-600",
+    past: "bg-gray-100 text-gray-600",
   };
+
+  const eventStart = new Date(`${event.date}T${event.time || "00:00"}`);
+  const isPast =
+    !isNaN(eventStart.getTime()) && eventStart.getTime() <= Date.now();
+  const canRegister =
+    !isPast && event.registrationStatus === "open" && !registered;
+  const displayStatus = isPast ? "past" : event.registrationStatus;
+  const buttonLabel = registered
+    ? "Registered"
+    : isPast
+    ? "Event Ended"
+    : event.registrationStatus === "open"
+    ? "Register Now"
+    : "Registration Closed";
 
   return (
     <>
@@ -111,11 +126,11 @@ const EventDetails = () => {
               </h1>
               <span
                 className={`px-3 py-1 rounded-md text-xs font-medium capitalize ${
-                  statusStyles[event.registrationStatus] ||
+                  statusStyles[displayStatus] ||
                   "bg-gray-100 text-gray-600"
                 }`}
               >
-                {event.registrationStatus}
+                {displayStatus}
               </span>
             </div>
 
@@ -162,18 +177,14 @@ const EventDetails = () => {
             <div className="pt-4 border-t border-[#eee]">
               <button
                 onClick={handleRegister}
-                disabled={event.registrationStatus !== "open" || registered}
+                disabled={!canRegister}
                 className={`w-full sm:w-auto px-6 py-3 rounded-lg font-semibold text-sm transition-all shadow-sm ${
-                  event.registrationStatus === "open" && !registered
+                  canRegister
                     ? "bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white"
                     : "bg-gray-100 text-gray-400 cursor-not-allowed"
                 }`}
               >
-                {registered
-                  ? "Registered"
-                  : event.registrationStatus === "open"
-                  ? "Register Now"
-                  : "Registration Closed"}
+                {buttonLabel}
               </button>
             </div>
           </div>
