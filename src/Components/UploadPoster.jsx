@@ -1,6 +1,7 @@
 // UploadPoster.jsx
 import React, { useState } from "react";
 import axios from "axios";
+import { getApiErrorMessage } from "../utils/apiError";
 
 export default function UploadPoster({
   onUploaded = () => {},
@@ -80,7 +81,7 @@ export default function UploadPoster({
         "[UploadPoster] upload error:",
         err?.response?.data || err.message
       );
-      setError(err?.response?.data?.error || "Upload failed. See console.");
+      setError(getApiErrorMessage(err, "Upload failed. See console."));
     } finally {
       setUploading(false);
     }

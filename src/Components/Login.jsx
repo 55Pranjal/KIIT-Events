@@ -8,6 +8,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import Footer from "./Footer";
 import Doodles from "./Doodles";
 import Spinner from "./Spinner";
+import { getApiErrorMessage } from "../utils/apiError";
 
 const Feature = ({ children }) => (
   <li className="flex items-start gap-3 text-gray-700">
@@ -43,8 +44,7 @@ const Login = () => {
     } catch (err) {
       console.error("[LOGIN] Google sign-in error:", err);
       toast.error(
-        err.response?.data?.error ||
-          "Google sign-in failed. Please try again."
+        getApiErrorMessage(err, "Google sign-in failed. Please try again.")
       );
     } finally {
       setSubmitting(false);
@@ -74,7 +74,7 @@ const Login = () => {
       }
     } catch (err) {
       const status = err.response?.status;
-      const serverMessage = err.response?.data?.error;
+      const serverMessage = getApiErrorMessage(err, null);
       console.error(
         "[LOGIN ERROR]",
         status || "",
@@ -225,7 +225,7 @@ const Login = () => {
         </div>
       </div>
 
-      <Footer />
+      <Footer flush />
     </>
   );
 };

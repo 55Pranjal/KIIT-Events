@@ -111,13 +111,28 @@ const NotificationsPanel = () => {
                       {!n.isRead && (
                         <span className="mt-1.5 w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
                       )}
-                      <span
-                        className={`text-sm break-words ${
-                          n.isRead ? "text-gray-600" : "text-[#111] font-medium"
-                        }`}
-                      >
-                        {n.message}
-                      </span>
+                      {n.link ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!n.isRead) handleToggleRead(n._id, n.isRead);
+                            navigate(n.link);
+                          }}
+                          className={`text-left text-sm break-words hover:underline ${
+                            n.isRead ? "text-gray-600" : "text-[#111] font-medium"
+                          }`}
+                        >
+                          {n.message}
+                        </button>
+                      ) : (
+                        <span
+                          className={`text-sm break-words ${
+                            n.isRead ? "text-gray-600" : "text-[#111] font-medium"
+                          }`}
+                        >
+                          {n.message}
+                        </span>
+                      )}
                     </div>
                     <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer self-start sm:self-auto">
                       <input

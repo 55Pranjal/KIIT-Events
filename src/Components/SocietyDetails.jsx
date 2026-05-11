@@ -7,6 +7,7 @@ import Doodles from "./Doodles";
 import ConfirmDialog from "./ConfirmDialog";
 import EmptyState, { UsersIcon } from "./EmptyState";
 import { useNavigate } from "react-router-dom";
+import { getApiErrorMessage } from "../utils/apiError";
 
 const SocietyDetails = () => {
   const navigate = useNavigate();
@@ -20,6 +21,12 @@ const SocietyDetails = () => {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Revoke is a single-society action: softer than delete (downgrades the
+  // president back to student and flips requestStatus to rejected, but keeps
+  // the Society document and any past events).
+  const [revokeTarget, setRevokeTarget] = useState(null); // { _id, name } | null
+  const [revoking, setRevoking] = useState(false);
 
   const BACKEND = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
 
@@ -45,7 +52,7 @@ const SocietyDetails = () => {
         "[SocietyDetails] fetch failed:",
         err?.response?.data || err.message
       );
-      setError(err?.response?.data?.message || "Failed to load societies.");
+      setError(getApiErrorMessage(err, "Failed to load societies."));
       setSocieties([]);
     } finally {
       setLoading(false);
@@ -119,12 +126,37 @@ const SocietyDetails = () => {
         "[SocietyDetails] bulk delete failed:",
         err?.response?.data || err.message
       );
-      const msg =
-        err?.response?.data?.message || "Failed to delete societies.";
+      const msg = getApiErrorMessage(err, "Failed to delete societies.");
       setDeleteError(msg);
       toast.error(msg);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const confirmRevoke = async () => {
+    if (!revokeTarget) return;
+    setRevoking(true);
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(
+        `${BACKEND}/api/admin/societies/${revokeTarget._id}/revoke`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSocieties((prev) =>
+        prev.filter((s) => String(s._id) !== String(revokeTarget._id))
+      );
+      toast.success(`Revoked "${revokeTarget.name}".`);
+      setRevokeTarget(null);
+    } catch (err) {
+      console.error(
+        "[SocietyDetails] revoke failed:",
+        err?.response?.data || err.message
+      );
+      toast.error(getApiErrorMessage(err, "Failed to revoke society."));
+    } finally {
+      setRevoking(false);
     }
   };
 
@@ -325,6 +357,20 @@ const SocietyDetails = () => {
                       Created {new Date(s.createdAt).toLocaleString()}
                     </div>
                   </div>
+
+                  {!deleteMode && (
+                    <div className="mt-4 pt-3 border-t border-[#eee] flex justify-end">
+                      <button
+                        onClick={() =>
+                          setRevokeTarget({ _id: s._id, name: s.name })
+                        }
+                        className="text-sm border border-amber-300 text-amber-700 hover:bg-amber-50 hover:border-amber-400 font-medium rounded-lg px-3 py-1.5 transition-all"
+                        title="Downgrade president to student and revoke society access"
+                      >
+                        Revoke
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -376,6 +422,17 @@ const SocietyDetails = () => {
         loading={deleting}
         onConfirm={confirmDelete}
         onCancel={() => setConfirmOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={!!revokeTarget}
+        title={`Revoke "${revokeTarget?.name ?? ""}"?`}
+        description="The society will be downgraded to rejected and the president loses society access (downgraded to student). Existing events stay — delete them separately if needed."
+        confirmLabel="Revoke"
+        destructive
+        loading={revoking}
+        onConfirm={confirmRevoke}
+        onCancel={() => setRevokeTarget(null)}
       />
 
       <Footer />
