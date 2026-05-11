@@ -9,7 +9,7 @@ export default function LoadingPage() {
   useEffect(() => {
     const checkBackend = async () => {
       try {
-        await axios.get(`${BACKEND}/api/health`);
+        await axios.get(`${BACKEND}/api/health`, { skipWakeOverlay: true });
         navigate("/");
       } catch (err) {
         setTimeout(checkBackend, 3000);
