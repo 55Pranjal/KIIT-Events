@@ -14,13 +14,18 @@ export default function UploadPoster({
 
   const BACKEND = import.meta.env.VITE_BACKEND_URL || ""; // ensure this is set in .env
 
+  const MAX_SIZE = 5 * 1024 * 1024; // keep in sync with server UploadRoutes.js
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
   const handleFileChange = (e) => {
     const f = e.target.files[0];
     if (!f) return;
-    // basic client-side checks
-    const maxSize = 8 * 1024 * 1024;
-    if (f.size > maxSize) {
-      setError("File too large (max 8MB).");
+    if (!ALLOWED_TYPES.includes(f.type)) {
+      setError("Unsupported file type. Use JPEG, PNG, WebP, or GIF.");
+      return;
+    }
+    if (f.size > MAX_SIZE) {
+      setError("File too large (max 5MB).");
       return;
     }
     setError("");
@@ -46,8 +51,12 @@ export default function UploadPoster({
         ? `${BACKEND.replace(/\/$/, "")}/api/upload`
         : "/api/upload";
 
+      const token = localStorage.getItem("token");
       const res = await axios.post(uploadUrl, form, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         timeout: 60000,
       });
 
@@ -112,7 +121,11 @@ export default function UploadPoster({
         </div>
       )}
 
-      <input type="file" accept="image/*" onChange={handleFileChange} />
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        onChange={handleFileChange}
+      />
       <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
         <button
           onClick={handleUpload}
