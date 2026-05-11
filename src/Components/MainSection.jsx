@@ -116,7 +116,7 @@ const MainSection = () => {
 
         {/* ── Content ── */}
         <div className="relative z-10 w-full flex flex-col items-center">
-          <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold text-[#111] leading-[1.05] max-w-4xl tracking-tightish">
+          <h1 className="font-display text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-[#111] leading-[1.05] max-w-4xl tracking-tightish">
             <span className="inline-block">
               Discover{" "}
               <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">

@@ -67,7 +67,7 @@ const EditProfile = () => {
         <div className="relative z-10 flex justify-center px-4 py-12 min-h-[80vh]">
           <form
             onSubmit={handleSubmit}
-            className="w-full max-w-lg bg-white border border-[#e5e5e5] rounded-2xl p-8 shadow-sm"
+            className="w-full max-w-lg bg-white border border-[#e5e5e5] rounded-2xl p-5 sm:p-8 shadow-sm"
           >
           <h2 className="font-display text-3xl font-bold text-center mb-2 text-[#111] tracking-tightish">
             Edit{" "}

@@ -91,7 +91,7 @@ const EditSociety = () => {
       <div className="relative overflow-hidden flex flex-col">
         <Doodles variant="hero" />
         <div className="relative z-10 flex justify-center px-4 py-12">
-          <div className="w-full max-w-lg bg-white border border-[#e5e5e5] rounded-2xl p-8 shadow-sm">
+          <div className="w-full max-w-lg bg-white border border-[#e5e5e5] rounded-2xl p-5 sm:p-8 shadow-sm">
           <h1 className="font-display text-3xl font-bold text-center mb-2 text-[#111] tracking-tightish">
             Edit{" "}
             <span className="bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">

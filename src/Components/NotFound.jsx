@@ -14,7 +14,7 @@ export default function NotFound() {
         <Doodles variant="hero" />
 
         <div className="relative z-10 text-center max-w-lg">
-          <p className="font-display text-7xl sm:text-8xl md:text-9xl font-extrabold tracking-tightish leading-none mb-4 bg-gradient-to-br from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">
+          <p className="font-display text-5xl sm:text-7xl md:text-9xl font-extrabold tracking-tightish leading-none mb-4 bg-gradient-to-br from-emerald-600 via-emerald-500 to-emerald-400 bg-clip-text text-transparent">
             404
           </p>
 

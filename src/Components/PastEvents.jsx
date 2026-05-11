@@ -39,7 +39,7 @@ export default function PastEvents() {
             <div className="relative z-10 flex-grow max-w-6xl mx-auto w-full px-4 sm:px-6 py-12">
               <div className="space-y-3 text-center mb-10">
                 <div className="h-8 w-64 bg-[#f0f0eb] rounded animate-pulse mx-auto" />
-                <div className="h-3 w-96 bg-[#f0f0eb] rounded animate-pulse mx-auto" />
+                <div className="h-3 w-96 max-w-full bg-[#f0f0eb] rounded animate-pulse mx-auto" />
               </div>
               <SkeletonGrid count={6} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" />
             </div>
