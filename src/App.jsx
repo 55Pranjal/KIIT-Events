@@ -4,7 +4,6 @@ import { Routes, Route } from "react-router-dom";
 import Login from "./Components/Login";
 import SignUp from "./Components/SignUp";
 import Contact from "./Components/Contact";
-import Home from "./pages/Home";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -30,9 +29,10 @@ import EventsPage from "./Components/EventsPage";
 import CreateHighlights from "./Components/CreateHighlights";
 import EventHighlightSingle from "./Components/EventHighlights";
 import LoadingPage from "./Components/LoadingPage";
-import NotFound from "./Components/NotFound";
 import ServerWakeOverlay from "./Components/ServerWakeOverlay";
 import RequireAuth from "./Components/RequireAuth";
+import CaseInsensitiveRedirect from "./Components/CaseInsensitiveRedirect";
+import PrivacyPolicy from "./Components/PrivacyPolicy";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -93,6 +93,49 @@ function App() {
     return () => window.removeEventListener("auth:expired", onExpired);
   }, [navigate]);
 
+  // Multi-tab auth sync — the `storage` event fires on every OTHER tab when
+  // localStorage changes. Use it to keep tabs in agreement: if someone logs
+  // out in tab A, tab B should also drop the user. If they're sitting on a
+  // public page (EventsPage, an event detail) we just refresh the Navbar
+  // without yanking them away; on a protected page we force-redirect.
+  useEffect(() => {
+    const PUBLIC_PREFIXES = [
+      "/",
+      "/loading",
+      "/Login",
+      "/SignUp",
+      "/EventsPage",
+      "/Upcoming",
+      "/PastEvents",
+      "/AnnouncementsList",
+      "/events",
+      "/privacy",
+    ];
+
+    const isPublicPath = (p) =>
+      PUBLIC_PREFIXES.some(
+        (pre) => p === pre || (pre !== "/" && p.startsWith(pre + "/"))
+      );
+
+    const onStorage = (e) => {
+      if (e.key !== "token") return;
+      // Refresh Navbar etc. regardless of direction (login or logout).
+      window.dispatchEvent(new Event("authChange"));
+
+      if (!e.newValue) {
+        // Logout in another tab.
+        toast.info("Signed out in another tab.");
+        const here = window.location.pathname;
+        if (!isPublicPath(here)) {
+          navigate("/Login", { replace: true });
+        }
+      }
+    };
+
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [navigate]);
+
   return (
     <>
       <ServerWakeOverlay />
@@ -111,12 +154,9 @@ function App() {
           element={<EventHighlightSingle />}
         />
         <Route path="/AnnouncementsList" element={<AnnouncementsList />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
 
         {/* ── Authenticated (any role) ─────────────────────────────────── */}
-        <Route
-          path="/home"
-          element={<RequireAuth><Home /></RequireAuth>}
-        />
         <Route
           path="/Dashboard"
           element={<RequireAuth><Dashboard /></RequireAuth>}
@@ -216,7 +256,7 @@ function App() {
           }
         />
 
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<CaseInsensitiveRedirect />} />
       </Routes>
 
       <ToastContainer
