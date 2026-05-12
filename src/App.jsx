@@ -3,7 +3,6 @@ import LandingScreen from "./Components/LandingScreen";
 import { Routes, Route } from "react-router-dom";
 import Login from "./Components/Login";
 import SignUp from "./Components/SignUp";
-import About from "./Components/About";
 import Contact from "./Components/Contact";
 import Home from "./pages/Home";
 import { useEffect } from "react";
@@ -33,8 +32,9 @@ import EventHighlightSingle from "./Components/EventHighlights";
 import LoadingPage from "./Components/LoadingPage";
 import NotFound from "./Components/NotFound";
 import ServerWakeOverlay from "./Components/ServerWakeOverlay";
+import RequireAuth from "./Components/RequireAuth";
 import axios from "axios";
-import { ToastContainer } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const REWAKE_THRESHOLD_MS = 10 * 60 * 1000;
@@ -79,43 +79,143 @@ function App() {
       document.removeEventListener("visibilitychange", onVisibility);
   }, []);
 
+  // Session expiry handler — fired by the axios interceptor when a 401 lands
+  // on a non-login endpoint. Local auth state has already been cleared by the
+  // interceptor; we just notify the user and bounce them to /Login.
+  useEffect(() => {
+    const onExpired = () => {
+      window.dispatchEvent(new Event("authChange"));
+      toast.info("Your session has expired. Please log in again.");
+      const here = window.location.pathname + window.location.search;
+      navigate(`/Login?from=${encodeURIComponent(here)}`, { replace: true });
+    };
+    window.addEventListener("auth:expired", onExpired);
+    return () => window.removeEventListener("auth:expired", onExpired);
+  }, [navigate]);
+
   return (
     <>
       <ServerWakeOverlay />
       <Routes>
+        {/* ── Public routes ────────────────────────────────────────────── */}
         <Route path="/loading" element={<LoadingPage />} />
         <Route path="/" element={<LandingScreen />} />
         <Route path="/Login" element={<Login />} />
         <Route path="/SignUp" element={<SignUp />} />
-        <Route path="/About" element={<About />} />
-        <Route path="/Contact" element={<Contact />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/CreateEvent" element={<CreateEvent />} />
-
-        <Route path="/Dashboard" element={<Dashboard />} />
-        <Route path="/SocietyRequestForm" element={<SocietyRequestForm />} />
-        <Route path="/RequestPage" element={<RequestPage />} />
-        <Route path="/EditProfile" element={<EditProfile />} />
-        <Route path="/events/:id" element={<EventDetails />} />
-        <Route
-          path="/events/:eventId/registrations"
-          element={<EventRegistrations />}
-        />
-        <Route path="/edit-event/:eventId" element={<EditEvent />} />
-        <Route path="/Notifications" element={<NotificationsPanel />} />
-        <Route path="/Upcoming" element={<UpcomingEvents />} />
-        <Route path="/EditSociety" element={<EditSociety />} />
-        <Route path="/AnnouncementsList" element={<AnnouncementsList />} />
-        <Route path="/CreateAnnouncements" element={<CreateAnnouncement />} />
-        <Route path="/AdminQueriesPage" element={<AdminQueries />} />
-        <Route path="/PastEvents" element={<PastEvents />} />
-        <Route path="/SocietyDetails" element={<SocietyDetails />} />
         <Route path="/EventsPage" element={<EventsPage />} />
-        <Route path="/CreateHighlights" element={<CreateHighlights />} />
+        <Route path="/Upcoming" element={<UpcomingEvents />} />
+        <Route path="/PastEvents" element={<PastEvents />} />
+        <Route path="/events/:id" element={<EventDetails />} />
         <Route
           path="/events/:eventId/highlights"
           element={<EventHighlightSingle />}
         />
+        <Route path="/AnnouncementsList" element={<AnnouncementsList />} />
+
+        {/* ── Authenticated (any role) ─────────────────────────────────── */}
+        <Route
+          path="/home"
+          element={<RequireAuth><Home /></RequireAuth>}
+        />
+        <Route
+          path="/Dashboard"
+          element={<RequireAuth><Dashboard /></RequireAuth>}
+        />
+        <Route
+          path="/EditProfile"
+          element={<RequireAuth><EditProfile /></RequireAuth>}
+        />
+        <Route
+          path="/Notifications"
+          element={<RequireAuth><NotificationsPanel /></RequireAuth>}
+        />
+        <Route
+          path="/Contact"
+          element={<RequireAuth><Contact /></RequireAuth>}
+        />
+        <Route
+          path="/SocietyRequestForm"
+          element={<RequireAuth><SocietyRequestForm /></RequireAuth>}
+        />
+
+        {/* ── Society or admin ─────────────────────────────────────────── */}
+        <Route
+          path="/CreateEvent"
+          element={
+            <RequireAuth roles={["society", "admin"]}>
+              <CreateEvent />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/CreateAnnouncements"
+          element={
+            <RequireAuth roles={["society", "admin"]}>
+              <CreateAnnouncement />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/edit-event/:eventId"
+          element={
+            <RequireAuth roles={["society", "admin"]}>
+              <EditEvent />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/events/:eventId/registrations"
+          element={
+            <RequireAuth roles={["society", "admin"]}>
+              <EventRegistrations />
+            </RequireAuth>
+          }
+        />
+
+        {/* ── Society only ─────────────────────────────────────────────── */}
+        <Route
+          path="/EditSociety"
+          element={
+            <RequireAuth roles={["society"]}>
+              <EditSociety />
+            </RequireAuth>
+          }
+        />
+
+        {/* ── Admin only ───────────────────────────────────────────────── */}
+        <Route
+          path="/RequestPage"
+          element={
+            <RequireAuth roles={["admin"]}>
+              <RequestPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/AdminQueriesPage"
+          element={
+            <RequireAuth roles={["admin"]}>
+              <AdminQueries />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/SocietyDetails"
+          element={
+            <RequireAuth roles={["admin"]}>
+              <SocietyDetails />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/CreateHighlights"
+          element={
+            <RequireAuth roles={["admin"]}>
+              <CreateHighlights />
+            </RequireAuth>
+          }
+        />
+
         <Route path="*" element={<NotFound />} />
       </Routes>
 
