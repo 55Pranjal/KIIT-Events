@@ -4,7 +4,7 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { useNavigate } from "react-router-dom";
 import { optimizeCard } from "../utils/imageOptimization";
-import { formatEventDateTime } from "../utils/formatDate";
+import { formatEventDateTime, getEventStart as getEventStartIST } from "../utils/formatDate";
 import Doodles from "./Doodles";
 import { SkeletonGrid } from "./Skeleton";
 import EmptyState, { CalendarIcon, SearchIcon } from "./EmptyState";
@@ -101,21 +101,10 @@ const EventsPage = () => {
     fetchPast();
   }, [BACKEND, view]);
 
-  const getEventStart = (ev) => {
-    const dateStr = (ev.date || "").trim();
-    const timeStr = (ev.time || "00:00").trim();
-    const iso = `${dateStr}T${timeStr}`;
-    const start = new Date(iso);
-    if (!isNaN(start.getTime())) return start;
-
-    const fallbackDate = new Date(dateStr);
-    if (!isNaN(fallbackDate.getTime())) {
-      fallbackDate.setHours(0, 0, 0, 0);
-      return fallbackDate;
-    }
-
-    return new Date();
-  };
+  // Use the shared IST-aware helper so client and server agree on which
+  // moment an event represents. Falls back to "now" only as a last resort
+  // so the classification reducer below doesn't crash on bad data.
+  const getEventStart = (ev) => getEventStartIST(ev.date, ev.time) || new Date();
 
   const eventsWithClassification = useMemo(() => {
     const now = new Date();

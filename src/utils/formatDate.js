@@ -4,6 +4,30 @@
 // the <input type="date"> form) or as a full ISO timestamp like
 // "2026-03-05T00:00:00.000Z" (depending on Mongoose schema). `event.time` is
 // usually "HH:MM" or "HH:MM:SS". These helpers cope with both shapes.
+//
+// Timezone convention: event date/time are venue-local (IST for KIIT). The
+// `getEventStart` helper builds the Date with an explicit +05:30 offset so
+// it produces the same absolute UTC moment that the backend produces — that
+// way client/server comparisons agree regardless of where each runs.
+
+const EVENT_TZ_OFFSET = "+05:30";
+
+/**
+ * Build a Date for an event's start moment, interpreting `date` and `time`
+ * as IST wall-clock. Returns null on malformed input.
+ *
+ * Mirrors server/utils/eventDate.js — keep the two in sync.
+ */
+export function getEventStart(date, time) {
+  if (!date) return null;
+  const dateMatch = String(date).match(/^(\d{4}-\d{2}-\d{2})/);
+  if (!dateMatch) return null;
+  const t = time && /^\d{1,2}:\d{2}/.test(String(time))
+    ? String(time)
+    : "00:00";
+  const d = new Date(`${dateMatch[1]}T${t}${EVENT_TZ_OFFSET}`);
+  return isNaN(d.getTime()) ? null : d;
+}
 
 function parseDateLocal(dateInput) {
   if (!dateInput) return null;

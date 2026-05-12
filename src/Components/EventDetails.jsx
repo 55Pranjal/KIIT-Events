@@ -7,7 +7,7 @@ import Footer from "./Footer";
 import Doodles from "./Doodles";
 import { SkeletonDetail } from "./Skeleton";
 import { optimizeHero } from "../utils/imageOptimization";
-import { formatEventDate, formatEventTime } from "../utils/formatDate";
+import { formatEventDate, formatEventTime, getEventStart } from "../utils/formatDate";
 
 const EventDetails = () => {
   const { id } = useParams();
@@ -92,9 +92,8 @@ const EventDetails = () => {
     past: "bg-gray-100 text-gray-600",
   };
 
-  const eventStart = new Date(`${event.date}T${event.time || "00:00"}`);
-  const isPast =
-    !isNaN(eventStart.getTime()) && eventStart.getTime() <= Date.now();
+  const eventStart = getEventStart(event.date, event.time);
+  const isPast = !!eventStart && eventStart.getTime() <= Date.now();
   const canRegister =
     !isPast && event.registrationStatus === "open" && !registered;
   const displayStatus = isPast ? "past" : event.registrationStatus;
