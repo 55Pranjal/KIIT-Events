@@ -99,20 +99,26 @@ const MainSection = () => {
   return (
     <div>
       {/* HERO SECTION */}
-      <div className="relative text-center min-h-[70vh] flex flex-col justify-center items-center px-4 md:px-8 lg:px-16 bg-[#fffffb] overflow-hidden">
-        {/* dot-grid texture */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle, #c2e0ce 1px, transparent 1px)",
-            backgroundSize: "30px 30px",
-            opacity: 0.4,
-          }}
-        />
+      <div className="relative text-center min-h-[70vh] flex flex-col justify-center items-center px-4 md:px-8 lg:px-16 bg-[#fffffb]">
+        {/* Decorative layer — clipped to hero bounds so the doodles/grid
+            don't bleed into adjacent sections. Kept separate from the
+            content layer so popovers (e.g. the society filter dropdown)
+            can overflow the hero without being clipped. */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* dot-grid texture */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle, #c2e0ce 1px, transparent 1px)",
+              backgroundSize: "30px 30px",
+              opacity: 0.4,
+            }}
+          />
 
-        {/* doodle layer */}
-        <Doodles variant="hero" />
+          {/* doodle layer */}
+          <Doodles variant="hero" />
+        </div>
 
         {/* ── Content ── */}
         <div className="relative z-10 w-full flex flex-col items-center">

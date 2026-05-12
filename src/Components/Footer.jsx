@@ -42,6 +42,9 @@ const Footer = ({ flush = false }) => {
           <Link to="/Contact" className="hover:text-emerald-600 transition">
             Contact
           </Link>
+          <Link to="/privacy" className="hover:text-emerald-600 transition">
+            Privacy
+          </Link>
         </nav>
 
         {/* Divider */}
