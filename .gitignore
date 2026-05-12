@@ -28,9 +28,11 @@ coverage/
 *.sln
 *.sw?
 
+# --- Backend (lives in its own repo, served separately by Render) ---
+server/
+
 # --- Environment files ---
 .env.local        # frontend environment variables
-server/.env       # backend environment variables
 .env.development*
 .env.test*
 .env.production*
