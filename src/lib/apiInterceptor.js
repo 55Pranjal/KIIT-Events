@@ -12,6 +12,37 @@ function isColdStartFailure(error) {
   return [502, 503, 504].includes(error.response.status);
 }
 
+// Endpoints that legitimately return 401 during normal flows (bad password,
+// invalid Google credential). We must NOT log the user out when these fire —
+// they're the user's own login attempts, not session expiry.
+const AUTH_ATTEMPT_PATHS = [
+  "/api/users/login",
+  "/api/users/google",
+];
+
+function isAuthAttempt(url = "") {
+  return AUTH_ATTEMPT_PATHS.some((p) => url.includes(p));
+}
+
+let sessionExpiredHandled = false;
+
+function handleSessionExpired() {
+  // Guard against the same session-expired event firing multiple times in a
+  // single render cycle (e.g. parallel API calls all returning 401 at once).
+  if (sessionExpiredHandled) return;
+  sessionExpiredHandled = true;
+  setTimeout(() => {
+    sessionExpiredHandled = false;
+  }, 2000);
+
+  localStorage.removeItem("token");
+  localStorage.removeItem("role");
+  localStorage.removeItem("societyRequestStatus");
+  // App.jsx listens for this and navigates to /Login. Done as an event so
+  // this module doesn't need to import React Router.
+  window.dispatchEvent(new Event("auth:expired"));
+}
+
 axios.interceptors.request.use((config) => {
   if (config.skipWakeOverlay) return config;
 
@@ -58,6 +89,18 @@ axios.interceptors.response.use(
     }
 
     if (meta) endWake(meta.id);
+
+    // Session expiry: a 401 on any endpoint OTHER than the login/google
+    // endpoints means the user's token is invalid or expired. Clear local
+    // auth state and signal the app to redirect.
+    if (
+      error.response?.status === 401 &&
+      !isAuthAttempt(config?.url) &&
+      localStorage.getItem("token")
+    ) {
+      handleSessionExpired();
+    }
+
     return Promise.reject(error);
   }
 );

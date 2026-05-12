@@ -1,7 +1,7 @@
 "use client";
 import Navbar from "./Navbar";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { GoogleLogin } from "@react-oauth/google";
@@ -21,6 +21,7 @@ const Feature = ({ children }) => (
 
 const Login = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -29,7 +30,11 @@ const Login = () => {
     localStorage.setItem("role", data.role);
     localStorage.setItem("societyRequestStatus", data.societyRequestStatus);
     window.dispatchEvent(new Event("authChange"));
-    navigate("/");
+    // Honour ?from= so users land back on the page that bounced them here.
+    // Strip any "/Login" target to avoid an infinite-loop redirect.
+    const from = searchParams.get("from");
+    const target = from && !from.startsWith("/Login") ? from : "/";
+    navigate(target, { replace: true });
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {

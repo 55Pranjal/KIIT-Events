@@ -155,14 +155,6 @@ const Navbar = () => {
           </li>
           <li>
             <button
-              onClick={() => handleNavigation("/About")}
-              className="hover:text-emerald-600 transition"
-            >
-              About
-            </button>
-          </li>
-          <li>
-            <button
               onClick={() => handleNavigation("/EventsPage")}
               className="hover:text-emerald-600 transition"
             >
@@ -303,7 +295,6 @@ const Navbar = () => {
         <ul className="flex flex-col items-center text-[#444] py-3 space-y-1 text-[16px]">
           {[
             { label: "Home", path: "/" },
-            { label: "About", path: "/About" },
             { label: "Events", path: "/EventsPage" },
             { label: "Announcements", path: "/AnnouncementsList" },
             { label: "Contact", path: "/Contact" },

@@ -30,9 +30,6 @@ const Footer = ({ flush = false }) => {
           <Link to="/" className="hover:text-emerald-600 transition">
             Home
           </Link>
-          <Link to="/About" className="hover:text-emerald-600 transition">
-            About
-          </Link>
           <Link to="/EventsPage" className="hover:text-emerald-600 transition">
             Events
           </Link>
