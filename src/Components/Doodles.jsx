@@ -136,129 +136,6 @@ function Pencil({ delay = 0.25 }) {
   );
 }
 
-function OpenBook({ delay = 0.3 }) {
-  return (
-    <g>
-      <path
-        className="dk"
-        style={{ strokeWidth: 2, animationDelay: `${delay}s` }}
-        d="M calc(100% - 130px) 47% C calc(100% - 110px) 43%, calc(100% - 85px) 43%, calc(100% - 78px) 47% L calc(100% - 78px) 62% C calc(100% - 85px) 58%, calc(100% - 110px) 58%, calc(100% - 130px) 62% Z"
-      />
-      <path
-        className="dk"
-        style={{ strokeWidth: 2, animationDelay: `${delay + 0.05}s` }}
-        d="M calc(100% - 78px) 47% C calc(100% - 71px) 43%, calc(100% - 46px) 43%, calc(100% - 26px) 47% L calc(100% - 26px) 62% C calc(100% - 46px) 58%, calc(100% - 71px) 58%, calc(100% - 78px) 62% Z"
-      />
-      <line className="dk" style={{ strokeWidth: 2, animationDelay: `${delay + 0.08}s` }} x1="calc(100% - 78px)" y1="47%" x2="calc(100% - 78px)" y2="62%" />
-      {[50, 53, 56].map((yp, i) => (
-        <line key={`l${i}`} className="dk" style={{ strokeWidth: 1, animationDelay: `${delay + 0.1 + i * 0.02}s` }}
-          x1="calc(100% - 120px)" y1={`${yp}%`} x2={`calc(100% - ${88 + i * 2}px)`} y2={`${yp - 0.5}%`} />
-      ))}
-      {[49.5, 52.5, 55.5].map((yp, i) => (
-        <line key={`r${i}`} className="dk" style={{ strokeWidth: 1, animationDelay: `${delay + 0.1 + i * 0.02}s` }}
-          x1="calc(100% - 68px)" y1={`${yp}%`} x2={`calc(100% - ${36 + i * 2}px)`} y2={`${yp + 0.5}%`} />
-      ))}
-    </g>
-  );
-}
-
-function CodeBrackets({ delay = 0.45 }) {
-  return (
-    <g transform="translate(30 0)">
-      <polyline className="dk" style={{ strokeWidth: 2.2, animationDelay: `${delay}s` }} points="20,84% 10,87% 20,90%" />
-      <polyline className="dk" style={{ strokeWidth: 2.2, animationDelay: `${delay + 0.03}s` }} points="46,84% 56,87% 46,90%" />
-      <line className="dk" style={{ strokeWidth: 1.8, animationDelay: `${delay + 0.05}s` }} x1="28" y1="91%" x2="38" y2="83%" />
-    </g>
-  );
-}
-
-function DottedWave({ delay = 0.55 }) {
-  return (
-    <path
-      className="dk"
-      style={{ strokeWidth: 1.4, strokeDasharray: "5 6", animationDelay: `${delay}s` }}
-      d="M 140 92% Q 200 88% 260 92% Q 320 96% 380 92% Q 440 88% 500 92%"
-    />
-  );
-}
-
-function WifiSignal({ delay = 0.5 }) {
-  return (
-    <g>
-      <path className="dk" style={{ strokeWidth: 2, animationDelay: `${delay}s` }} d="M calc(100% - 85px) 86% a 28 28 0 0 1 56 0" />
-      <path className="dk" style={{ strokeWidth: 2, animationDelay: `${delay + 0.04}s` }} d="M calc(100% - 68px) 86% a 11 11 0 0 1 22 0" />
-      <circle className="dkf" style={{ strokeWidth: 1.8, animationDelay: `${delay + 0.08}s` }} cx="calc(100% - 57px)" cy="86%" r="3.5" />
-    </g>
-  );
-}
-
-// New: Graduation cap (campus theme)
-function GradCap({ delay = 0.18, anchor = "right" }) {
-  // Anchored top-right by default, ~50px from edge, y=46
-  // Use a viewBox-friendly approach: render at fixed canvas pixels.
-  const cx = anchor === "right" ? "calc(100% - 100px)" : "100";
-  const cy = 50;
-  return (
-    <g>
-      {/* mortarboard top diamond */}
-      <polygon
-        className="dkf"
-        style={{ strokeWidth: 1.6, animationDelay: `${delay}s` }}
-        points={`calc(${cx} - 18) ${cy}, ${cx} ${cy - 8}, calc(${cx} + 18) ${cy}, ${cx} ${cy + 8}`}
-      />
-      {/* base / cap */}
-      <path
-        className="dk"
-        style={{ strokeWidth: 1.6, animationDelay: `${delay + 0.04}s` }}
-        d={`M calc(${cx} - 11) ${cy + 4} L calc(${cx} - 11) ${cy + 10} Q ${cx} ${cy + 14} calc(${cx} + 11) ${cy + 10} L calc(${cx} + 11) ${cy + 4}`}
-      />
-      {/* tassel string */}
-      <path
-        className="dk"
-        style={{ strokeWidth: 1.2, animationDelay: `${delay + 0.08}s` }}
-        d={`M calc(${cx} + 18) ${cy} Q calc(${cx} + 22) ${cy + 6} calc(${cx} + 20) ${cy + 14}`}
-      />
-      {/* tassel ball */}
-      <circle
-        className="dkf"
-        style={{ strokeWidth: 1.2, animationDelay: `${delay + 0.1}s` }}
-        cx={`calc(${cx} + 20)`}
-        cy={cy + 16}
-        r="2.4"
-      />
-    </g>
-  );
-}
-
-// New: Calendar with an event mark (events theme)
-function CalendarMark({ delay = 0.32 }) {
-  // mid-left, around x=40 y=46% (vertical %)
-  const x = 40;
-  const y = "46%";
-  return (
-    <g>
-      {/* binder rings */}
-      <line className="dk" style={{ strokeWidth: 1.6, animationDelay: `${delay}s` }} x1={x + 6} y1={y} x2={x + 6} y2={`calc(${y} - 6px)`} />
-      <line className="dk" style={{ strokeWidth: 1.6, animationDelay: `${delay}s` }} x1={x + 22} y1={y} x2={x + 22} y2={`calc(${y} - 6px)`} />
-      {/* outer box */}
-      <rect
-        className="dk"
-        style={{ strokeWidth: 1.8, animationDelay: `${delay + 0.04}s` }}
-        x={x} y={y} width="32" height="28" rx="2"
-      />
-      {/* header strip */}
-      <line className="dk" style={{ strokeWidth: 1.4, animationDelay: `${delay + 0.06}s` }} x1={x} y1={`calc(${y} + 8px)`} x2={x + 32} y2={`calc(${y} + 8px)`} />
-      {/* event dot */}
-      <circle className="dkf" style={{ strokeWidth: 1.2, animationDelay: `${delay + 0.1}s` }} cx={x + 22} cy={`calc(${y} + 18px)`} r="2.5" />
-      {/* date squares */}
-      <line className="dk" style={{ strokeWidth: 0.9, animationDelay: `${delay + 0.12}s`, opacity: 0.7 }} x1={x + 5} y1={`calc(${y} + 16px)`} x2={x + 11} y2={`calc(${y} + 16px)`} />
-      <line className="dk" style={{ strokeWidth: 0.9, animationDelay: `${delay + 0.13}s`, opacity: 0.7 }} x1={x + 13} y1={`calc(${y} + 16px)`} x2={x + 19} y2={`calc(${y} + 16px)`} />
-      <line className="dk" style={{ strokeWidth: 0.9, animationDelay: `${delay + 0.14}s`, opacity: 0.7 }} x1={x + 5} y1={`calc(${y} + 22px)`} x2={x + 11} y2={`calc(${y} + 22px)`} />
-      <line className="dk" style={{ strokeWidth: 0.9, animationDelay: `${delay + 0.15}s`, opacity: 0.7 }} x1={x + 13} y1={`calc(${y} + 22px)`} x2={x + 19} y2={`calc(${y} + 22px)`} />
-    </g>
-  );
-}
-
 // Reusable scattered dot cluster
 function Dots({ positions = [], r = 2.5, baseDelay = 0.08 }) {
   return (
@@ -303,10 +180,6 @@ function HeroLayout() {
       <MusicNotes />
       <Dots positions={trDots} r={2.5} baseDelay={0.12} />
       <Pencil />
-      <OpenBook />
-      <CodeBrackets />
-      <DottedWave />
-      <WifiSignal />
       <Dots positions={bottomDots} r={2.2} baseDelay={0.3} />
     </>
   );
@@ -338,7 +211,7 @@ function CornersLayout() {
 }
 
 function AccentLayout() {
-  // Single corner accent — graduation cap top-right with a few sparkles.
+  // Single corner accent — a few sparkles in the top-right.
   const sparkles = [
     ["calc(100% - 32px)", 20],
     ["calc(100% - 14px)", 38],
@@ -346,7 +219,6 @@ function AccentLayout() {
   ];
   return (
     <>
-      <GradCap delay={0.12} />
       <Dots positions={sparkles} r={2} baseDelay={0.1} />
     </>
   );
@@ -380,11 +252,5 @@ export {
   MusicNotes,
   StarBurst,
   Pencil,
-  OpenBook,
-  CodeBrackets,
-  DottedWave,
-  WifiSignal,
-  GradCap,
-  CalendarMark,
   Dots,
 };
