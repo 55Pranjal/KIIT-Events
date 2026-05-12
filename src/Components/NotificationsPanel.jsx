@@ -59,6 +59,34 @@ const NotificationsPanel = () => {
     }
   };
 
+  const handleMarkAllRead = async () => {
+    try {
+      await axios.patch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/notifications/read-all`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      toast.success("All notifications marked as read.");
+    } catch (err) {
+      console.error("Failed to mark all read:", err);
+      toast.error("Failed to mark all as read.");
+    }
+  };
+
+  const handleDeleteOne = async (id) => {
+    try {
+      await axios.delete(
+        `${import.meta.env.VITE_BACKEND_URL}/api/notifications/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setNotifications((prev) => prev.filter((n) => n._id !== id));
+    } catch (err) {
+      console.error("Failed to delete notification:", err);
+      toast.error("Failed to delete notification.");
+    }
+  };
+
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
@@ -81,12 +109,22 @@ const NotificationsPanel = () => {
               </p>
             </div>
 
-            <button
-              onClick={() => navigate("/AnnouncementsList")}
-              className="text-sm border border-[#e5e5e5] text-[#333] hover:bg-gray-50 hover:border-emerald-200 font-medium rounded-lg px-4 py-2 transition-all whitespace-nowrap"
-            >
-              View Announcements
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              {unreadCount > 0 && (
+                <button
+                  onClick={handleMarkAllRead}
+                  className="text-sm border border-[#e5e5e5] text-[#333] hover:bg-gray-50 hover:border-emerald-200 font-medium rounded-lg px-4 py-2 transition-all whitespace-nowrap"
+                >
+                  Mark all read
+                </button>
+              )}
+              <button
+                onClick={() => navigate("/AnnouncementsList")}
+                className="text-sm border border-[#e5e5e5] text-[#333] hover:bg-gray-50 hover:border-emerald-200 font-medium rounded-lg px-4 py-2 transition-all whitespace-nowrap"
+              >
+                View Announcements
+              </button>
+            </div>
           </div>
 
           <div className="overflow-y-auto max-h-[60vh]">
@@ -134,15 +172,26 @@ const NotificationsPanel = () => {
                         </span>
                       )}
                     </div>
-                    <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer self-start sm:self-auto">
-                      <input
-                        type="checkbox"
-                        checked={n.isRead}
-                        onChange={() => handleToggleRead(n._id, n.isRead)}
-                        className="w-4 h-4 accent-emerald-500"
-                      />
-                      Read
-                    </label>
+                    <div className="flex items-center gap-3 self-start sm:self-auto">
+                      <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={n.isRead}
+                          onChange={() => handleToggleRead(n._id, n.isRead)}
+                          className="w-4 h-4 accent-emerald-500"
+                        />
+                        Read
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteOne(n._id)}
+                        title="Delete notification"
+                        aria-label="Delete notification"
+                        className="text-xs text-gray-400 hover:text-red-500 transition-colors px-1.5 py-0.5 rounded"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
